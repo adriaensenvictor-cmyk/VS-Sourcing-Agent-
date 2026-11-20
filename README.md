@@ -34,9 +34,19 @@ Optional: set a GitHub API token for a larger rate allowance: \`export GITHUB_TO
 (DO NOT commit your token or paste it into a demo).
 
 Choose **Live discovery** and press **Run sourcing engine**.
-For a reliable offline demonstration select **Verified research snapshot**: Simra AI,
-TerraTask and Jouly are linked to original TU Berlin pages and additional public signals.
-These three research cases are **not falsely claimed to have been discovered by the code**.
+The dashboard opens on **Verified research snapshot**, with Germany and an age limit of three years selected.
+Choose **Other Europe** to inspect Constellate Proteomics, a Dutch historical case. Open its Timeline and reveal
+the later coverage to compare the conference mention with the funding story. Simra AI, TerraTask and Jouly are
+German reference cases. All four are curated. Enable **Include companies with unverified age** to review TerraTask.
+
+Use the shortlist during screening and download the queue before closing your browser session.
+The source exports retain the engine's original fields. Each dossier shows additional sourced profile details.
+The Sources section links to European research and filing directories for manual follow-up.
+
+The Analyst brief tab works offline with linked source excerpts. For optional AI summaries, set
+`OPENAI_API_KEY` in the Streamlit server's environment before starting the app. Keep the key out of source control.
+In the tab, submit a question or leave it blank for an overview. The button sends the question, company name
+and selected public excerpts to OpenAI and uses the server account's API credits.
 
 ## Tests
 
