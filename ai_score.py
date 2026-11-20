@@ -14,7 +14,8 @@ from ai_scoring import AIScoringError, evaluate_candidate
 
 def _read_json(path):
     try:
-        return json.loads(Path(path).read_text(encoding="utf-8"))
+        source = sys.stdin.read() if path == "-" else Path(path).read_text(encoding="utf-8")
+        return json.loads(source)
     except (OSError, json.JSONDecodeError) as error:
         raise ValueError("{}: {}".format(path, error)) from None
 
