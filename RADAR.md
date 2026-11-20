@@ -21,13 +21,13 @@ For a live funding search, set `BRAVE_SEARCH_API_KEY` and run `python3 radar.py 
 
 ## Optional AI investment analysis
 
-The optional evaluator uses the existing candidate JSON and writes a separate AI report. It does not change the radar candidate schema or scrape LinkedIn.
+The optional evaluator accepts the current First Trace JSON envelope, a candidate array, or a single candidate object. It writes a separate AI report and does not change the shared candidate schema or scrape LinkedIn. The example uses the current discovery engine and limits the run to one candidate to control API use.
 
 On Windows PowerShell, from the repository folder:
 
 ~~~powershell
 $env:OPENAI_API_KEY = Read-Host "OpenAI API key"
-python radar.py --json --limit 1 | python ai_score.py - --output ai_evaluations.json
+python emergence.py --limit 1 --github-limit 0 | python ai_score.py - --output ai_evaluations.json
 ~~~
 
 The key remains in the current PowerShell session; do not add it to a file or commit it. The evaluation calls the OpenAI Responses API and uses Structured Outputs. A default model can be changed with OPENAI_MODEL.
