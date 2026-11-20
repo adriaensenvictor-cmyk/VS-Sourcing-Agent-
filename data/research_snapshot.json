@@ -1,0 +1,93 @@
+[
+  {
+    "id": "research:simra",
+    "name": "Simra AI",
+    "location": "Berlin, Germany",
+    "team": "Dr.-Ing. Amir Mabhout (CEO); Holger Niessner (CTO)",
+    "cohort": "TU Berlin 2026 startup cohort",
+    "description": "Berlin-based team developing AI agents that operate chip-design EDA tools. University profile documents founder expertise and an EXIST startup grant covering 1 Aug 2026–31 Jul 2027. OpenADA is a publicly available agent–EDA open-source interface. Public equity funding is NOT verified; the company is already present on certain startup sites, so early-discovery advantage needs validation.",
+    "source_url": "https://www.tu.berlin/entrepreneurship/startup-support/tu-startups/container-profile/startups-2026-simra-ai",
+    "project_url": "https://github.com/simra-tech/OpenADA",
+    "evidence": [
+      {
+        "signal": "Named team on university profile",
+        "excerpt": "Amir Mabhout, CEO; Holger Niessner, CTO",
+        "url": "https://www.tu.berlin/entrepreneurship/startup-support/tu-startups/container-profile/startups-2026-simra-ai"
+      },
+      {
+        "signal": "EXIST support",
+        "excerpt": "EXIST Gründungsstipendium: 01.08.2026–31.07.2027; public startup grant, not a VC round",
+        "url": "https://www.tu.berlin/entrepreneurship/startup-support/tu-startups/container-profile/startups-2026-simra-ai"
+      },
+      {
+        "signal": "Public code artifact",
+        "excerpt": "OpenADA, a public open-source agent–EDA contract",
+        "url": "https://github.com/simra-tech/OpenADA"
+      },
+      {
+        "signal": "Product trace",
+        "excerpt": "Simra's website describes engineering workflow demos",
+        "url": "https://www.simratech.com/"
+      }
+    ]
+  },
+  {
+    "id": "research:terratask",
+    "name": "TerraTask",
+    "location": "Berlin, Germany",
+    "team": "Johnny Benjes (management); Linda Ochwada (technical lead); Michael Eiden (design lead)",
+    "cohort": "TU Berlin 2026 startup cohort",
+    "description": "Tools and geospatial analysis for biodiversity, climate adaptation and green-space planning. University profile names a three-person interdisciplinary team and EXIST support from March 2026 to February 2027. A September 2026 industry expo listed an Alpha TerraTask product. Funding is not independently verified.",
+    "source_url": "https://www.tu.berlin/entrepreneurship/startup-support/tu-startups/container-profile/startups-2026-terratask",
+    "project_url": "https://www.terratask.de/",
+    "evidence": [
+      {
+        "signal": "Named team on university profile",
+        "excerpt": "Johnny Benjes; Linda Ochwada; Michael Eiden",
+        "url": "https://www.tu.berlin/entrepreneurship/startup-support/tu-startups/container-profile/startups-2026-terratask"
+      },
+      {
+        "signal": "EXIST support",
+        "excerpt": "EXIST-Gründungsstipendium 01.03.2026–28.02.2027; a startup grant, not a VC round",
+        "url": "https://www.tu.berlin/entrepreneurship/startup-support/tu-startups/container-profile/startups-2026-terratask"
+      },
+      {
+        "signal": "Product trace",
+        "excerpt": "Alpha TerraTask — software for sustainable green spaces, September 2026 trade fair listing",
+        "url": "https://www.galabau-messe.com/en/exhibitors/terratask-2631951/alpha-terratask-%E2%80%93-software-for-sustainable-green-spaces-2633647"
+      }
+    ]
+  },
+  {
+    "id": "research:jouly",
+    "name": "Jouly",
+    "location": "Berlin, Germany",
+    "team": "Tim Wiebelhaus (CEO); Sebastian Otzen (CTO); Robin Beer (Head of Energy Intelligence)",
+    "cohort": "TU Berlin 2026 startup cohort",
+    "description": "AI-supported industrial energy and production data optimization. University profile names technical founders and EXIST support during November 2025–October 2026. Company website describes a production energy-management offering. A GmbH was registered in April 2026; equity funding remains unverified.",
+    "source_url": "https://www.tu.berlin/entrepreneurship/startup-support/tu-startups/container-profile/startups-2026-jouly",
+    "project_url": "https://jouly.ai/",
+    "evidence": [
+      {
+        "signal": "Named team on university profile",
+        "excerpt": "Tim Wiebelhaus; Sebastian Otzen; Robin Beer",
+        "url": "https://www.tu.berlin/entrepreneurship/startup-support/tu-startups/container-profile/startups-2026-jouly"
+      },
+      {
+        "signal": "EXIST support",
+        "excerpt": "EXIST support 01.11.2025–31.10.2026; public startup grant, not equity financing",
+        "url": "https://www.tu.berlin/entrepreneurship/startup-support/tu-startups/container-profile/startups-2026-jouly"
+      },
+      {
+        "signal": "Product trace",
+        "excerpt": "Industrial energy-optimization platform and demo request",
+        "url": "https://jouly.ai/"
+      },
+      {
+        "signal": "Company formation trace",
+        "excerpt": "Jouly GmbH registration dated 28 April 2026",
+        "url": "https://www.online-handelsregister.de/handelsregisterauszug/be/Berlin-Charlottenburg/HRB/286719/Jouly-GmbH"
+      }
+    ]
+  }
+]
