@@ -18,10 +18,17 @@ EMPLOYMENT = re.compile(
     re.I,
 )
 PRIOR_COMPANY = re.compile(
-    r"\b(?i:(?:previously|earlier) (?:co[- ]?)?founded|(?:co[- ]?)?founded and sold|(?:was (?:the |a )?)?co[- ]founder of|gründete zuvor) "
-    r"(?P<company>[A-Z][\w&.-]*(?: [A-Z][\w&.-]*){0,3})"
+    r"\b(?i:(?:previously|earlier) (?:co[- ]?)?founded|(?:co[- ]?)?founded and sold|"
+    r"(?:was (?:the |a )?)?co[- ]founder of|(?:mit)?gründete (?:zuvor|bereits)|"
+    r"a (?:co[- ]?)?fondé auparavant) "
+    r"(?P<company>[A-ZÀ-ÖØ-Þ][\w&.-]*(?: [A-ZÀ-ÖØ-Þ][\w&.-]*){0,3})"
 )
 HISTORY_LABELS = {"Previous employer", "Previous startup"}
+
+
+def venture_name(value):
+    normalized = re.sub(r"[^\w]+", " ", value.casefold()).strip()
+    return re.sub(r"\s+(?:gmbh|ug|ag|inc|ltd|limited|sas|bv)$", "", normalized)
 
 
 def founder_history(title, names, excerpts, url):
@@ -49,7 +56,7 @@ def founder_history(title, names, excerpts, url):
                 reference = next(value for value in match.groupdict().values() if value)
                 reference = (EMPLOYER_ALIASES[reference.casefold()] if label == "Previous employer"
                              else reference.strip(" ."))
-                if reference.casefold() == title.casefold().strip():
+                if venture_name(reference) == venture_name(title):
                     continue
                 key = (label, named[0], reference.casefold())
                 signals[key] = {"signal": label, "excerpt": sentence,

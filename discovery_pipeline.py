@@ -2,7 +2,7 @@
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
 
-from emergence import DISCOVERY_SOURCES, PROGRAMME_SOURCES, discover_github, rank_candidates, university_lead
+from emergence import DISCOVERY_SOURCES, EVENT_SOURCES, PROGRAMME_SOURCES, discover_github, rank_candidates, university_lead
 from linkedin_scout import LINKEDIN_SOURCE
 from qualification import detect_intent
 from radar import collect, rank_rows
@@ -52,6 +52,11 @@ def source_result(loader):
 
 
 def load_programme(name, warnings):
+    if name in EVENT_SOURCES:
+        from early_sources import EVENT_READERS
+
+        return EVENT_READERS[name](warnings)
+
     from programmes import READERS
 
     return READERS[name](warnings)

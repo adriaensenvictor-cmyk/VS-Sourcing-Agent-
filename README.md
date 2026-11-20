@@ -32,6 +32,20 @@ scout’s assessment distinct from independently verified evidence. The [former-
 catalogue and its sources](research/founder-employers.md) power the search presets and
 prior-employer detection.
 
+Use **Innovation event evidence** in Screening to view teams from published pitch
+and competition rosters. The scanner checks the latest published TUM IDEAward
+results and Falling Walls Venture finalists, alongside BayStartUP and Fraunhofer.
+The **Repeat founder · recent signal** filter pairs a sourced prior venture with a
+dated public signal for the current project within the past year.
+**Evidence → Discovery timing** displays the earliest trace in the dossier, the
+desk's first recorded capture, and comparison sources where reviewed. A numeric
+comparison requires two exact dates. An undated company profile stays undated.
+
+**School projects** displays public German school-competition projects and
+documented company transitions. The view refreshes its source pages on access
+after the one-hour cache expires. The investor queue contains venture candidates
+from the discovery pipeline. School records have no individual profiles.
+
 See the [competitive review, demo sequence, and n8n runbook](research/scout-workflow.md).
 The dossier uses the reviewed, deterministic founder–venture fit and legal registration evidence
 from [Victor's PR #6](https://github.com/adriaensenvictor-cmyk/VS-Sourcing-Agent-/pull/6).

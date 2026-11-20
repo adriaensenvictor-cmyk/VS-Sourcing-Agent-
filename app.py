@@ -5,8 +5,10 @@ import sqlite3
 import streamlit as st
 
 from dashboard_data import dashboard_rows, export_csv, export_json, load_demo_run
-from discovery_pipeline import run_discovery
-from emergence import DISCOVERY_SOURCES, EUROPE
+from discovery_pipeline import run_discovery, source_result
+from earliness import recent_signal
+from early_sources import CLIPRO, JUGEND, JUNIOR, PUBLIC_TRANSITIONS, SCHOOL_READERS
+from emergence import DISCOVERY_SOURCES, EVENT_SOURCES, EUROPE
 from founder_signals import track_record
 from historical_replay import render_replay
 from incubator_directory import BVIZ_DIRECTORY, FEDERAL_NETWORK, PROGRAMME_FINDER, read_centres
@@ -22,6 +24,8 @@ from scout_inbox import ScoutInbox, valid_url
 
 LIVE_MODE = "Live discovery"
 SNAPSHOT_MODE = "Verified research snapshot"
+REPEAT_FOUNDER = "Repeat founder · recent signal"
+PITCH_SOURCES = frozenset((*EVENT_SOURCES, "BayStartUP roster", "Fraunhofer AHEAD"))
 
 st.set_page_config(page_title="FirstTrace · Scout Desk", layout="wide")
 st.markdown("""
@@ -44,12 +48,17 @@ div[data-testid="stTabs"] [role="tablist"] {overflow-x:auto}
 def open_queued_lead(lead_id):
     st.session_state.update(workspace="Screening", data_mode=LIVE_MODE, lead=lead_id,
                             geography=ANYWHERE, company_age="Any age", query="",
-                            funding=[], stages=[], sectors=[], source_filter=[], early_follow_up=False,
+                            funding=[], stages=[], sectors=[], source_filter=[], early_follow_up=False, event_evidence=False,
                             founder_history_filter="Any background", **{"shortlist-Live discovery": False,
                             "watch-Live discovery": False, "review_score": 0})
 
 
-page = st.sidebar.selectbox("Workspace", ["Screening", "New since review", "LinkedIn scouting", "Incubators in Germany", "Historical replay"], key="workspace")
+page = st.sidebar.selectbox(
+    "Workspace",
+    ["Screening", "New since review", "LinkedIn scouting", "Incubators in Germany",
+     "School projects", "Historical replay"],
+    key="workspace",
+)
 if page == "Historical replay":
     render_replay()
     st.stop()
@@ -57,6 +66,44 @@ if page == "Historical replay":
 @st.cache_data(ttl=3600, show_spinner="Reading the BVIZ directory…")
 def incubator_centres():
     return read_centres()
+
+
+@st.cache_data(ttl=3600, show_spinner="Reading public school project results…")
+def school_projects(source):
+    return source_result(SCHOOL_READERS[source])
+
+
+if page == "School projects":
+    st.header("School entrepreneurship projects")
+    st.caption("Public German competition results and later milestones. School projects stay outside investor screening.")
+    chosen = st.multiselect("Programmes", list(SCHOOL_READERS), default=list(SCHOOL_READERS))
+    query = st.text_input("Find a school project", placeholder="e.g. CLIPRO").strip().casefold()
+    count = 0
+    for source in chosen:
+        projects, status = school_projects(source)
+        rows = [row for row in projects if query in f'{row["name"]} {row["project"]}'.casefold()]
+        count += len(rows)
+        st.subheader(source)
+        if status["state"] != "ok":
+            st.warning("Results are temporarily unavailable. Check the public sources below.")
+        for row in rows:
+            st.text(row["name"])
+            st.caption(row["milestone"])
+            if row["project"]:
+                st.text(row["project"])
+    if count == 0:
+        st.info("No projects match your filters.")
+    st.subheader("Published follow-through")
+    for case in PUBLIC_TRANSITIONS:
+        st.text(f'{case["name"]} · {case["milestone"]}')
+    st.divider()
+    st.subheader("Sources")
+    st.link_button("JUGEND GRÜNDET finalists", JUGEND)
+    st.link_button("CLIPRO project detail", CLIPRO)
+    st.link_button("IW JUNIOR national results", JUNIOR)
+    for case in PUBLIC_TRANSITIONS:
+        st.link_button(f'{case["name"]} · documented transition', case["url"])
+    st.stop()
 
 
 if page == "Incubators in Germany":
@@ -177,13 +224,20 @@ with st.expander("Funding, sector and review filters"):
                              for source in (row.get("source_names") or [row.get("source")])
                              if source})
     source_filter = st.multiselect("Discovery source", source_options, key="source_filter")
-    founder_filter = st.selectbox("Founder history", ["Any background", "Previous employer", "Previous startup"],
-                                  key="founder_history_filter")
+    events_only = st.checkbox("Innovation event evidence", key="event_evidence",
+                              help="See teams on sourced pitch and competition lists, including outside the shortlist.")
+    founder_filter = st.selectbox(
+        "Founder history", ["Any background", "Previous employer", "Previous startup", REPEAT_FOUNDER],
+        key="founder_history_filter",
+        help="Repeat founder requires a sourced previous venture and a public trace for the current project within 365 days.",
+    )
     minimum = st.slider("Minimum evaluation score", 0, 100, step=1, key="review_score",
                         help="Scores use 60 points for the team and 40 for the project. At zero, pending assessments stay visible.")
 
 decisions = store.decisions(outcome["mode"])
-rows = dashboard_rows(outcome, shortlist_only=shortlist_only and not (saved_only or early_only))
+rows = dashboard_rows(outcome, shortlist_only=shortlist_only and not (
+    saved_only or early_only or events_only or founder_filter == REPEAT_FOUNDER
+))
 sector_options = sorted({row["sector"] for row in rows})
 sectors = st.multiselect("Sector", sector_options, placeholder="All sectors", key="sectors")
 leads = []
@@ -201,9 +255,15 @@ for item in rows:
         continue
     if source_filter and not set(source_filter).intersection(item.get("source_names") or [item["origin"]]):
         continue
-    if founder_filter != "Any background" and not any(
-            entry["signal"] == founder_filter for entry in track_record(item)):
-        continue
+    if events_only:
+        if not PITCH_SOURCES.intersection(item.get("source_names") or [item["origin"]]):
+            continue
+    if founder_filter != "Any background":
+        expected = "Previous startup" if founder_filter == REPEAT_FOUNDER else founder_filter
+        if not any(entry["signal"] == expected for entry in track_record(item)):
+            continue
+        if founder_filter == REPEAT_FOUNDER and not recent_signal(item, profile, date.today()):
+            continue
     if query and query not in " ".join([item["name"], item["team"], item["sector"]]).casefold():
         continue
     if age != "Any age":

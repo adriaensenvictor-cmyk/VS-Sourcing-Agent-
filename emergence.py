@@ -17,10 +17,11 @@ from qualification import detect_intent, merge_candidates, url_key
 from sourcing import positive_int
 
 CORE_DISCOVERY_SOURCES = ("TUM Venture Labs", "Show HN", "GitHub", "TU Berlin")
+EVENT_SOURCES = ("TUM IDEAward", "Falling Walls Venture")
 PROGRAMME_SOURCES = (
     "UnternehmerTUM Incubator", "imec.istart", "BayStartUP roster",
     "Fraunhofer AHEAD", "SpinLab", "RootCamp", "HPI Engine",
-)
+) + EVENT_SOURCES
 DISCOVERY_SOURCES = CORE_DISCOVERY_SOURCES + PROGRAMME_SOURCES + (LINKEDIN_SOURCE,)
 
 EXIST = "https://portal.mytum.de/jobs/wissenschaftler/NewsArticle_20260806_092633/newsarticle_view"

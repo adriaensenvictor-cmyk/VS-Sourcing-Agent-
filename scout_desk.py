@@ -5,6 +5,7 @@ from urllib.parse import urlsplit
 
 import streamlit as st
 
+from earliness import comparison_days, comparisons, public_trace
 from founder_fit import FOUNDER_WEIGHT, VENTURE_WEIGHT, weighted_points
 from founder_signals import track_record
 from linkedin_scout import PUBLIC_POST
@@ -50,6 +51,34 @@ def evidence_text(item, profile):
 def link(label, value):
     if url := valid_url(value):
         st.link_button(label, url)
+
+
+def render_earliness(item, profile, first_seen):
+    st.subheader("Discovery timing")
+    trace = public_trace(item, profile)
+    st.markdown("**Earliest public signal in this dossier**")
+    if trace:
+        st.text(f'{trace["date"]} · {trace["label"]}')
+        link("Open the earliest signal", trace.get("url"))
+    else:
+        st.caption("Date unverified")
+    st.markdown("**First captured by this FirstTrace desk**")
+    st.text(first_seen[:10] + " UTC" if first_seen else "No live capture recorded")
+    st.markdown("**Comparison sources**")
+    benchmarks = comparisons(item)
+    if not benchmarks:
+        st.caption("No verified comparison source on this dossier yet.")
+    for benchmark in benchmarks:
+        label = f'{benchmark["label"]} · {benchmark["kind"]}'
+        st.text(f'{label} · {benchmark["date"] or "First publication date unverified"}')
+        link(f'Open {benchmark["label"]} comparison', benchmark["url"])
+        delta = comparison_days(first_seen, benchmark)
+        if delta is not None:
+            if delta == 0:
+                st.caption("FirstTrace capture and this comparison share a calendar date.")
+            else:
+                relation = "before" if delta > 0 else "after"
+                st.caption(f"FirstTrace captured the lead {abs(delta)} days {relation} this dated comparison.")
 
 
 def render_decision(item, store, saved, notices):
@@ -171,6 +200,8 @@ def render_dossier(item, store, saved, notices):
         for exclusion in item.get("shortlist_exclusions", []):
             st.text(exclusion.replace("_", " ").capitalize())
     with timeline:
+        render_earliness(item, profile, first_seen)
+        st.subheader("Evidence timeline")
         st.caption(item["public_trace_age"])
         dated = sorted((e for e in evidence if e.get("observed_at")), key=lambda e: e["observed_at"])
         for idx, entry in enumerate(dated + [e for e in evidence if not e.get("observed_at")], start=1):
@@ -224,6 +255,9 @@ def render_sources(item, evidence=()):
         for record in profile.get("financials", []):
             label_by_url.setdefault(record["url"], record["label"])
             urls.append(record["url"])
+        for benchmark in comparisons(item):
+            label_by_url.setdefault(benchmark["url"], f'{benchmark["label"]} · {benchmark["kind"]}')
+            urls.append(benchmark["url"])
         for idx, url in enumerate(dict.fromkeys(urls), start=1):
             if safe := valid_url(url):
                 link(f'{idx}. {label_by_url.get(url, urlsplit(safe).hostname)}', safe)

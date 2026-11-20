@@ -180,7 +180,7 @@ def qualify(records, release_events=(), search_review=None):
         if key and key[0] == "github":
             links["github"].append(record["project_url"])
         linkedin.extend(record["linkedin"]["public_links"])
-        evidence.extend({**item, "source_url": url} for item in record["evidence"])
+        evidence.extend({**item, "source_url": item.get("source_url") or url} for item in record["evidence"])
         founders.extend(person for person in record.get("founders", []) if person.get("name") and person.get("source_url"))
         founders.extend(review.get("founders", []))
         if record.get("founder") and not review.get("founders") and record.get("profile"):
