@@ -83,7 +83,7 @@ WEIGHTS = {
 }
 
 
-def collect(script, *options):
+def collect(script, *options, warnings=None):
     result = subprocess.run(
         [sys.executable, str(ROOT / script), "--json", *options],
         capture_output=True,
@@ -92,7 +92,10 @@ def collect(script, *options):
         timeout=150,
     )
     if result.stderr:
-        print(result.stderr.rstrip(), file=sys.stderr)
+        if warnings is None:
+            print(result.stderr.rstrip(), file=sys.stderr)
+        else:
+            warnings.extend(result.stderr.strip().splitlines())
     return json.loads(result.stdout)
 
 
@@ -136,6 +139,19 @@ def enrich(lead):
     lead["score_breakdown"] = weighted
     lead["score"] = sum(weighted.values())
     return lead
+
+
+def rank_rows(leads, *, skip_github_releases=False, api_key=None):
+    groups = merge_candidates(sorted(map(enrich, leads), key=lambda lead: lead["score"], reverse=True))
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        def evaluate(group):
+            releases = [] if skip_github_releases else github_release_events(group)
+            check = public_funding_search(group[0], api_key) if api_key else None
+            return qualify(group, releases, check)
+
+        ranked = list(executor.map(evaluate, groups))
+    ranked.sort(key=lambda lead: (lead["funding"]["status"] != "funded", lead["score"]), reverse=True)
+    return ranked
 
 
 def main():
@@ -184,16 +200,11 @@ def main():
     if not successful:
         return 1
 
-    groups = merge_candidates(sorted(map(enrich, leads), key=lambda lead: lead["score"], reverse=True))
-    with ThreadPoolExecutor(max_workers=4) as executor:
-        def evaluate(group):
-            releases = [] if args.skip_github_releases else github_release_events(group)
-            check = public_funding_search(group[0], api_key) if args.search_funding else None
-            return qualify(group, releases, check)
-
-        ranked = list(executor.map(evaluate, groups))
-    ranked.sort(key=lambda lead: (lead["funding"]["status"] != "funded", lead["score"]), reverse=True)
-    results = ranked[:args.limit]
+    results = rank_rows(
+        leads, skip_github_releases=args.skip_github_releases,
+        api_key=api_key if args.search_funding else None,
+    )
+    results = results[:args.limit]
     if args.json:
         print(json.dumps(results, indent=2, ensure_ascii=False))
     elif not results:

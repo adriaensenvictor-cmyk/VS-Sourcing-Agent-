@@ -128,6 +128,7 @@ def read_team(entry):
     return {
         "id": f"tum:{url.rstrip('/').rsplit('/', 1)[-1]}",
         "title": page.heading,
+        "description": next((paragraph[:350] for paragraph in page.paragraphs if len(paragraph) > 100), None),
         "source": "TUM Venture Labs",
         "location_query": "Germany (university ecosystem)",
         "source_url": url,

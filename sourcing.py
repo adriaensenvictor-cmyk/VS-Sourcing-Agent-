@@ -43,7 +43,8 @@ def fetch(city, cutoff):
 
 def assess(post, city):
     title = post.get("title") or ""
-    body = html.unescape(re.sub(r"<[^>]+>", " ", post.get("story_text") or ""))
+    raw_body = post.get("story_text") or ""
+    body = html.unescape(re.sub(r"<[^>]+>", " ", raw_body))
     body = " ".join(body.split())
     if not title.lower().startswith("show hn:") or re.search(NOISE, title + " " + body, re.I):
         return None
@@ -77,6 +78,10 @@ def assess(post, city):
     project_url = post.get("url") or ""
     if urlsplit(project_url).scheme not in {"https", "http"}:
         project_url = None
+    linked_code = re.findall(
+        r'(?:code|repo(?:sitory)?|github)\s*:\s*(?:<a href=")?(https://github\.com/[\w.-]+/[\w.-]+)',
+        html.unescape(raw_body), re.I,
+    )
     points = post.get("points") or 0
     return {
         "id": post["objectID"],
@@ -85,6 +90,8 @@ def assess(post, city):
         "published_at": post["created_at"],
         "source_url": f'https://news.ycombinator.com/item?id={post["objectID"]}',
         "project_url": project_url,
+        "description": body[:350] or None,
+        "links": {"github": list(dict.fromkeys(linked_code))},
         "intent_cues": detect_intent(body, f'https://news.ycombinator.com/item?id={post["objectID"]}'),
         "hn_points": points,
         "score": score,

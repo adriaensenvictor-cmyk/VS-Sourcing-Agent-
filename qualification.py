@@ -164,10 +164,19 @@ def qualify(records, release_events=(), search_review=None):
     claims, founders, timeline, reviews, grants, rounds = [], [], [], [], [], []
     sources, linkedin = [], []
     evidence = []
+    links = {"github": [], "linkedin": []}
     for record in records:
         url = record["source_url"]
         review = REVIEWS.get(record["id"], {})
         sources.append(url)
+        for platform in links:
+            links[platform].extend(record.get("links", {}).get(platform, []))
+        for field in ("project_url", "description", "sector", "team", "cohort"):
+            if not lead.get(field) and record.get(field):
+                lead[field] = record[field]
+        key = url_key(record.get("project_url"))
+        if key and key[0] == "github":
+            links["github"].append(record["project_url"])
         linkedin.extend(record["linkedin"]["public_links"])
         evidence.extend({**item, "source_url": url} for item in record["evidence"])
         founders.extend(person for person in record.get("founders", []) if person.get("name") and person.get("source_url"))
@@ -236,7 +245,8 @@ def qualify(records, release_events=(), search_review=None):
                                    bool(founder_names)),
     }
     lead.update(
-        sources=list(dict.fromkeys(sources)), evidence=evidence, claims=list({(item["type"], item["source_url"], item["status"]): item for item in claims}.values()),
+        sources=list(dict.fromkeys(sources)), links={key: list(dict.fromkeys(urls)) for key, urls in links.items()},
+        evidence=evidence, claims=list({(item["type"], item["source_url"], item["status"]): item for item in claims}.values()),
         founders=list(founder_names.values()), timeline=timeline, earliest_verified_public_signal=first,
         funding={"status": status, "rounds": rounds, "public_support": grants, "reviews": reviews},
         scores=dimensions, score=sum(dimensions.values()), score_breakdown=dimensions,
