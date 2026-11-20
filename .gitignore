@@ -3,4 +3,5 @@ __pycache__/
 .env
 .env.*
 !.env.example
-report.html
+/report.html
+.firsttrace/

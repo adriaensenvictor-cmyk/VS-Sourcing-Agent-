@@ -1,23 +1,25 @@
-# FirstTrace walkthrough and priorities
+# FirstTrace source map and product notes
 
-## How the prototype works
+## How it works
 
-1. `scout.py` reads the public UnternehmerTUM prototype-grant directory, deduplicates project names and tags descriptions against a Munich software and infrastructure thesis.
-2. `data/reviews.json` holds analyst-verified founder and product links, repository associations and reasons to hold a lead. The engine fetches release dates from GitHub for associated repositories. The evidence score rewards source coverage.
-3. The script generates a browsable HTML report with ranked leads, primary evidence, funding uncertainty, held candidates and a retrospective date comparison. The same renderer works with `data/demo-snapshot.json` offline.
+FirstTrace reads the UnternehmerTUM prototype-grant directory and BayStartUP's dated 2026 Phase 1 roster. It keeps candidate identities separate across sites unless an analyst provides a link. The capture found 130 grant-directory listings and 23 nominees, with one evidence-backed match for Micro Factory. The competition source contributed 22 additional projects. GitHub enriches known repositories and provides publication dates for public releases.
 
-The tested capture contains 130 projects, 14 keyword matches and 6 held candidates. Bevel has two dated GitHub release records and a TUM founder source. Its first equity round and date of database visibility remain unverified.
+SQLite records first observation and last observation independently of publication dates, deduplicates new evidence and retains a per-scan source status. The browser workspace provides multi-select stage filters, saved searches, triage and a downloadable change digest. The inbox keeps analyst-assessed fit and source evidence separate. [Run instructions](../README.md) · [Micro Factory association](https://www.sce.de/en/news-details/sce-alumni-startup-micro-factory-zaehlt-zu-den-gewinnern-des-muenchener-businessplan-wettbewerbs-2026.html)
 
-## Technical priorities
+## Additional reliable places to watch
 
-1. **Improve candidate identity.** Prefer reciprocal repository and company-domain links or an explicit institutional link. Queue ambiguous matches for review. Check a labeled set of competing names, agencies, funded teams and independent startups, and measure precision among the first five leads.
-2. **Track changes and dates.** Store project and evidence IDs, source publication time, first observed time and funding checks in SQLite. Upsert on stable IDs, log per-source failures and mark stale results. Add an incremental scan with bounded retries and pagination. Test that reruns generate zero duplicate signals.
-3. **Separate fit, evidence and timing.** Rank buyer and thesis fit independently from evidence coverage. Keep funding status explicit. Compare early signals against a named, dated press or database baseline only when available. Run a time-cutoff evaluation and record which leads a reviewer would contact.
-4. **Add a second discovery feed.** Try dated local competition rosters or university collaboration posts. GitHub currently enriches pre-matched repositories. Measure whether the new feed surfaces leads the cohort alone misses.
+| Source | Earliest useful trace | What still needs verification |
+| --- | --- | --- |
+| [BayStartUP Phase 1](https://www.baystartup.de/startupdate/die-nominierten-im-muenchener-businessplan-wettbewerb-2026-phase-1) | Dated organizer-published nominations. FirstTrace scans the 2026 roster live. | A nomination does not establish that a team has raised equity or launched. Watch the [competition page](https://www.baystartup.de/businessplan-wettbewerbe/muenchen) for the next roster. |
+| [EXIST Startup Grant](https://exist.de/programm/gruendungsstipendium/) and [university grant announcements](https://www.sce.de/en/news-details/micro-factory-erhaelt-exist-gruenderstipendium.html) | A named team receives academic commercialization support. EXIST can start before incorporation. | The public programme is authoritative for eligibility. Use a dated award notice for team-level evidence. Success stories can appear later. |
+| [TUM project-study listings](https://www.tumcso.com/teaching/final-theses-and-project-studies-bachelor-master/available-topics) | An early company posts a public collaboration or asks for help with its first pilots. The [Meda listing](https://www.ie.mgt.tum.de/en/ent/news/news-single-view/article/project-study-meda-ai/) describes deployments and a planned raise. | Confirm the team owns a venture. A student assignment or a planned raise alone carries limited information. |
+| [UnternehmerTUM’s The Reveal](https://www.unternehmertum.de/en/landingpages/the-reveal) | Organizer-published startup demos grouped by theme. | Rosters mix stages and may change. Archive the publication date at capture, then confirm each team’s financing. |
+| [CORDIS](https://cordis.europa.eu/projects) and [ERC Proof of Concept results](https://erc.europa.eu/news-events/news/proof-concept-grants-2025-examples-projects) | Research teams disclose commercialization experiments in official awards or project records. | Follow German research teams to an explicit spinout, licence or pilot. A grant-recipient institution may be distinct from the eventual company. |
 
-## Product and design priorities
+Add TUM collaborations next and compare them with the two current feeds on the number of unique, independently verified founders they surface. Use official pages for identity and publication dates. Verify financing with a company or named investor announcement where possible.
 
-- **Make the day’s best find obvious.** Use a calm canvas, generous spacing, large typography and one accent for evidence and actions. Give the strongest verified lead a compact feature card with one sentence on why it matters and a clear **Review evidence** button. Borrow the hierarchy of Apple’s product sections. [Apple](https://www.apple.com/)
-- **Build an inbox with a detail pane.** Keep the queue visible on the left and show the team, reason to meet, dated evidence and funding status on the right. Add search, keyboard navigation, and **Save**, **Pass** and **Needs verification**. Stack the panes on small screens and keep source links one click away.
-- **Make the first question easy.** Take inspiration from OpenAI’s prominent single prompt and grouped content. Offer one search box with suggestions such as “New developer tools in Munich.” Start with filters over indexed evidence, then consider sourced natural-language queries. [OpenAI](https://openai.com/)
-- **Give analysts a reason to return.** Show what changed in each saved search, such as a new release from a watched team or a funding update. Offer an optional digest of meaningful changes. Measure time to the first evidence-backed decision and whether analysts return to review new signals.
+## Design and evaluation
+
+The featured lead follows Apple's use of a clear focal point and a single main action. The search box and two starter searches take inspiration from OpenAI’s single entry point, while stage chips bring search scope into view. The mobile view stacks the panes and includes a link back to the queue. [Apple](https://www.apple.com/) · [Apple search guidance](https://developer.apple.com/design/human-interface-guidelines/search-fields) · [OpenAI](https://openai.com/)
+
+Ask two teammates to review the first five leads without seeing the ranking, then compare how many they would contact and how long they take to find the first dated source. For repeat use, watch how often they reopen a saved search when a new signal appears. The current capture and historical date filter help rehearse those tasks. Prospective advantage over a database requires a dated baseline and repeated live observation.

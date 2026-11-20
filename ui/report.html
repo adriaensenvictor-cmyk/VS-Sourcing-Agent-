@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='13' fill='none' stroke='%230a7352' stroke-width='3'/%3E%3Ccircle cx='16' cy='16' r='4.5' fill='%230a7352'/%3E%3C/svg%3E">
+<title>FirstTrace — Sourcing desk</title>
+<style>/* FIRSTTRACE_STYLE */</style>
+</head>
+<body>
+<a class="skip" href="#workspace">Skip to lead inbox</a>
+<header class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="#top"><span class="brand-mark" aria-hidden="true"></span>FirstTrace</a>
+    <nav class="nav-links" aria-label="Sections">
+      <a href="#top">Search</a>
+      <a href="#calls">Call list</a>
+      <a href="#workspace">Inbox</a>
+      <a href="#sources">Sources</a>
+    </nav>
+    <div class="nav-status"><span id="scan-mode" class="mode"></span><time id="scan-time"></time>
+      <button id="run-scan" class="btn primary compact" type="button" hidden><span class="spinner" aria-hidden="true"></span><span id="run-scan-label">Run live scan</span></button></div>
+  </div>
+</header>
+<main id="top">
+  <section class="hero" aria-labelledby="hero-title">
+    <p class="eyebrow">HTGF sourcing desk · Bavaria</p>
+    <h1 id="hero-title">Who should we call this week?</h1>
+    <p class="hero-copy">FirstTrace reads university grants, competition rosters, GitHub and every company’s legal notice, and does the first 25 minutes of research on each team for you.</p>
+    <form class="ask" id="ask" role="search" autocomplete="off">
+      <label class="search" for="query">
+        <span class="sr-only">Describe the founders you are looking for</span><span class="search-mark" aria-hidden="true"></span>
+        <input id="query" type="search" placeholder="Describe the founders you’re looking for — e.g. AI for doctors, not funded yet" spellcheck="false">
+        <kbd aria-hidden="true" id="search-key">/</kbd>
+      </label>
+      <div id="understood" class="understood" aria-live="polite" hidden></div>
+      <div id="suggested-searches" class="examples" aria-label="Example searches"></div>
+    </form>
+    <dl class="stats" id="stats"></dl>
+  </section>
+
+  <noscript><p class="notice">Enable JavaScript to use the offline lead inbox.</p></noscript>
+  <div id="source-warning" class="notice" role="status" hidden></div>
+  <div id="scan-banner" class="scan-banner" role="status" hidden></div>
+
+  <section id="calls" class="calls" aria-labelledby="calls-title">
+    <div class="section-heading">
+      <div><h2 id="calls-title">This week’s call list</h2><p id="calls-summary">Open window, highest HTGF readiness, every point sourced.</p></div>
+      <div class="heading-actions">
+        <button id="export-brief" type="button" class="btn secondary">Weekly brief</button>
+        <button id="export-crm" type="button" class="btn secondary">Export to CRM</button>
+      </div>
+    </div>
+    <ol id="call-list" class="call-list"></ol>
+  </section>
+
+  <section id="workspace" aria-labelledby="workspace-title">
+    <div class="section-heading">
+      <div><h2 id="workspace-title">Lead inbox</h2><p id="scan-summary"></p></div>
+      <div class="heading-actions">
+        <button type="button" class="btn secondary" id="save-search">Save search</button>
+        <button id="digest" type="button" class="btn secondary">Change digest</button>
+      </div>
+    </div>
+    <div id="saved-searches" class="saved-searches" aria-label="Saved searches" hidden></div>
+    <details class="controls" id="filters">
+      <summary><span>Filters</span><span id="filter-count" class="filter-count"></span></summary>
+      <div class="filter-grid">
+        <fieldset>
+          <legend>Funding stage</legend>
+          <div class="pills" id="funding-filters"></div>
+        </fieldset>
+        <fieldset>
+          <legend>Product stage</legend>
+          <div class="pills" id="product-filters"></div>
+        </fieldset>
+      </div>
+      <div class="filter-tail">
+        <label for="source-filter">Source <select id="source-filter"><option value="">All sources</option></select></label>
+        <label class="switch"><input id="grant-filter" type="checkbox"> Grant-backed</label>
+        <label class="switch"><input id="momentum-filter" type="checkbox"> Advancing in competitions</label>
+        <button id="reset" type="button" class="text-button">Clear filters</button>
+      </div>
+    </details>
+    <div class="inbox">
+      <div class="queue">
+        <div class="queue-controls">
+          <div id="views" class="views" role="group" aria-label="Inbox view"></div>
+          <p id="result-count" aria-live="polite"></p>
+        </div>
+        <ul id="lead-list" aria-label="Matching leads"></ul>
+      </div>
+      <article class="lead-details" id="lead-details" aria-labelledby="lead-title" tabindex="-1"></article>
+    </div>
+    <p class="shortcuts" aria-hidden="true"><kbd>/</kbd> search <kbd>J</kbd><kbd>K</kbd> next / previous <kbd>W</kbd> watch <kbd>V</kbd> needs verification <kbd>P</kbd> pass <kbd>Esc</kbd> clear search</p>
+  </section>
+
+  <section id="sources" class="source-section" aria-labelledby="source-title">
+    <div class="section-heading"><div><h2 id="source-title">Sources</h2><p>What was read, when, and how much.</p></div></div>
+    <ul id="source-list" class="source-list"></ul>
+    <details class="source-more">
+      <summary>How FirstTrace researches a company</summary>
+      <ol class="method">
+        <li><strong>Discover.</strong> Every UnternehmerTUM prototype grant and every BayStartUP business plan roster linked from the organizer’s news index (nominees, phase winners, finalists, winners).</li>
+        <li><strong>Find the website.</strong> Analyst-verified domains first. Otherwise FirstTrace tries the company name as a domain and only accepts it if the site’s legal notice names the company and a matching city or German address.</li>
+        <li><strong>Read the legal notice.</strong> German law (§ 5 DDG) requires an Impressum with the legal entity, address, register court and number, and the people who represent the company. FirstTrace extracts them and flags teams that are not incorporated yet.</li>
+        <li><strong>Read the website.</strong> Pilot, beta, demo, pricing, customers, hiring, named investors or investor pages, with the exact quote.</li>
+        <li><strong>Date the footprint.</strong> First Internet Archive capture of the site and first Hacker News post linking it. Archive dates are labeled as such.</li>
+        <li><strong>Score and remember.</strong> HTGF readiness from eight sourced checks, the investment window, and a diff against the previous scan.</li>
+      </ol>
+    </details>
+    <details class="source-more">
+      <summary>More sources to watch</summary>
+      <ul>
+        <li><a href="https://exist.de/programm/gruendungsstipendium/" target="_blank" rel="noopener noreferrer">EXIST Startup Grant</a> · Early academic teams. Look for dated award announcements from their universities.</li>
+        <li><a href="https://www.unternehmertum.de/en/landingpages/the-reveal" target="_blank" rel="noopener noreferrer">The Reveal</a> · Official demo-day roster. Check each exhibitor’s funding separately.</li>
+        <li><a href="https://cordis.europa.eu/projects" target="_blank" rel="noopener noreferrer">CORDIS</a> · EU research awards. Look for German ERC Proof of Concept projects, then verify spinout intent.</li>
+      </ul>
+    </details>
+    <details id="historical" class="source-more" hidden><summary>Historical comparison</summary><div id="historical-cases"></div></details>
+  </section>
+</main>
+<footer class="footer">
+  <p>FirstTrace surfaces public evidence. Funding, identity and first visibility stay unverified until an analyst confirms them. FirstTrace drafts; the analyst decides whether to reach out.</p>
+</footer>
+<p id="feedback" class="feedback" role="status" hidden></p>
+<script id="firsttrace-data" type="application/json">FIRSTTRACE_PAYLOAD</script>
+<script>/* FIRSTTRACE_SCRIPT */</script>
+</body>
+</html>

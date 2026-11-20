@@ -1,0 +1,57 @@
+{
+  "aliases": {
+    "competition:micro factory 3d solutions": {
+      "id": "campus:micro factory",
+      "url": "https://www.sce.de/en/news-details/sce-alumni-startup-micro-factory-zaehlt-zu-den-gewinnern-des-muenchener-businessplan-wettbewerbs-2026.html"
+    }
+  },
+  "stages": {
+    "campus:bevel": {
+      "domain": "bevel.software",
+      "location": "Munich",
+      "product": {"label": "Launched", "url": "https://www.bevel.software/about"},
+      "funding": {"label": "Unverified", "url": "https://app.dealroom.co/companies/bevel_3"}
+    },
+    "campus:patalyze": {
+      "domain": "patalyze.com",
+      "location": "Munich area",
+      "product": {"label": "Launched", "url": "https://patalyze.com/docs/mcp"},
+      "funding": {"label": "Unverified", "url": "https://www.cbinsights.com/company/patalyze"}
+    },
+    "campus:valuemize": {
+      "funding": {"label": "Pre-seed", "date": "2026-07-16", "url": "https://www.startbase.de/news/valuemize-erhaelt-siebenstellige-pre-seed-finanzierung/"}
+    },
+    "campus:nuno.ai": {
+      "funding": {"label": "Seed reported", "url": "https://www.cbinsights.com/company/nuno-labs/financials"}
+    },
+    "campus:micro factory": {
+      "location": "Munich",
+      "grant": {"label": "EXIST Startup Grant", "url": "https://www.sce.de/en/news-details/micro-factory-erhaelt-exist-gruenderstipendium.html"}
+    },
+    "competition:meda ai": {
+      "domain": "mymeda.ai",
+      "team": {"label": "Andrei, Aqid and Penny", "url": "https://mymeda.ai/en/about"},
+      "product": {"label": "Launched", "url": "https://www.ie.mgt.tum.de/en/ent/news/news-single-view/article/project-study-meda-ai/"},
+      "grant": {"label": "EXIST Startup Grant", "url": "https://mymeda.ai/en/about"},
+      "note": "A TUM project brief describes deployments and work on a seed raise. The company reports grant support. Equity status remains unverified. Ask how many practices pay for billing review and how repeatable integrations are."
+    },
+    "competition:aproxymade": {
+      "domain": "aproxymade.com",
+      "fit": "Core fit",
+      "product": {"label": "Launched", "url": "https://www.aproxymade.com/"},
+      "note": "Public onboarding for REST API monitoring and caching. Ask whether teams convert from free monitoring to paid caching."
+    },
+    "competition:venedy": {
+      "domain": "venedy.io",
+      "fit": "Core fit",
+      "team": {"label": "Armin Skollik and Lukas Hügle", "url": "https://venedy.io/en/"},
+      "product": {"label": "Pilot / beta", "url": "https://venedy.io/en/pilot-program.html"},
+      "note": "A Munich API security company inviting pilot customers before its public launch. Ask whether pilots convert into recurring contracts. Equity funding remains unverified."
+    },
+    "competition:aithea": {
+      "domain": "ai-thea.com",
+      "hold": "The company currently emphasizes training and consulting. Verify repeatable software revenue before outreach.",
+      "hold_url": "https://www.ai-thea.com/"
+    }
+  }
+}

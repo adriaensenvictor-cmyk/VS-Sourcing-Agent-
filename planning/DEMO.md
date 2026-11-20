@@ -1,5 +1,11 @@
 # Demo and hand-in
 
+## Updated demo path
+
+Start with the featured Bevel card, then choose **Pilot / beta** to surface **Venedy** from the live BayStartUP roster. Its organizer nomination is dated 2 March 2026, and its company site names two founders and offers early access through a pilot program. Show the two links and the **Funding unverified** badge. Ask how pilot users convert into recurring customers. Use **Watch** and open **Watchlist** to demonstrate a repeatable analyst workflow. [Competition roster](https://www.baystartup.de/startupdate/die-nominierten-im-muenchener-businessplan-wettbewerb-2026-phase-1) · [Founders](https://venedy.io/en/) · [Pilot programme](https://venedy.io/en/pilot-program.html)
+
+For the stage-filter demo, select **Pre-seed** and **Seed** together under **All leads**. Valuemize and Nuno remain visible with their hold reasons. The archived comparison remains available under **Sources**.
+
 ## Best find from the initial scan
 
 **Bevel Software, Munich.** The UnternehmerTUM grant recipient listing surfaced Bevel. TUM's collaboration page names Ali Raza, Juan Ignacio Viera Garcia and Razvan Radulescu, and describes the original legacy-code project. GitHub records a public Bevel language-server release on **19 April 2025**, direct evidence the team shipped an installable artifact. The current company site describes a Git-backed control plane for enterprise AI agents and links its open-source work. This documents a team and two product directions. Validate whether the current offering has paid deployments before making any traction claim.
@@ -21,9 +27,9 @@ Sources: [UnternehmerTUM](https://funding.unternehmertum.de/supportedteams-2/) �
 | Time | What the viewer sees | Narration |
 | --- | --- | --- |
 | 0:00–0:23 | FirstTrace and one release date, then the analyst's inbox | “Founders ship code and look for collaborators while their companies are still taking shape. Those traces sit in different places. FirstTrace connects them into a lead an HTGF analyst can assess.” |
-| 0:23–0:52 | Run `python3 scout.py` and open the generated report | “Our first market is Munich B2B software. We pull the university's prototype-grant directory, filter for our scope and look up release histories when a repository has been linked to the team. Here is what this run found.” Read the on-screen counts. |
+| 0:23–0:52 | Run `python3 scout.py` and open the generated report | “We start in Munich. We scan a university grant directory and a dated business-plan competition roster. When an analyst links a repository to a team, we fetch its public release history.” Read the on-screen counts. |
 | 0:52–1:38 | Open the top lead and show cohort, team and dated release links | “Here is Bevel. The campus listing gave us the name. A TUM collaboration identifies the people behind it. On 19 April 2025 the team published a Bevel language-server release. Today their focus is enterprise agent infrastructure. We would ask who pays for it and whether it is already used in production.” |
-| 1:38–2:12 | Show funding status and expand Held aside | “We show what the source establishes. Bevel's database entry has no verified publication date, so we cannot put a number on the head start. Nuno is on hold because a database reports a seed round. The analyst can see both decisions and their sources.” |
+| 1:38–2:12 | Choose **Pilot / beta**, open Venedy and click **Watch** | “The dated competition roster also surfaced Venedy. Its website identifies the founders and invites pilot customers. The funding stage is unverified, so we watch for another signal and show why the lead is on our list.” |
 | 2:12–2:42 | Point to the sourced historical comparison | “In a historical example, Valuemize's competition listing appeared 874 days before press coverage of its pre-seed. An analyst selected that comparison retrospectively. Future runs can log when we first observed a signal and compare against a dated baseline as it appears.” |
 | 2:42–3:00 | Return to the Bevel card and the strongest two pieces of proof | “Start with the team, then verify the product. For Bevel, we would confirm financing and talk to the team about which enterprises are already deploying the product.” |
 
@@ -37,7 +43,7 @@ Sources: [UnternehmerTUM](https://funding.unternehmertum.de/supportedteams-2/) �
 
 ## Verification and PR handoff
 
-- **Changed** Built the live campus scan, release enrichment, evidence-ranked lead inbox and historical comparison.
-- **Verified** A live run and a replay of its capture produced identical reports apart from the mode label. Both the fresh and the shipped snapshots returned 130 projects, 14 keyword matches and 6 explicit holds. Bevel and Patalyze ranked first and second. Browser review confirmed the Bevel evidence links and expandable hold list.
+- **Changed** Added the live BayStartUP roster, SQLite scan history, separate funding and product filters, and a two-pane evidence inbox with local triage.
+- **Verified** Live and replay each returned 152 distinct projects, 35 inbox candidates and 7 held candidates. Browser checks exercised stage combinations, saved searches, watch/pass, keyboard search and narrow layout.
 - **Evidence** [Run instructions](../README.md) · [Captured scan](../data/demo-snapshot.json) · [Analyst checks](../data/reviews.json).
 - **Next** The research owner should cross-review the top five and confirm equity status with the best lead. The integration owner should freeze the demo revision, record the pitch and verify BuilderBase acceptance.

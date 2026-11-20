@@ -1,249 +1,298 @@
-"""Discover campus projects and prioritize evidence-backed leads."""
+"""Discover public startup signals and build an offline-ready sourcing inbox."""
 import argparse
 from datetime import date, datetime, timezone
-from html import escape
-from html.parser import HTMLParser
-import json
 from pathlib import Path
-import re
-from urllib.request import Request, urlopen
+import json
+import sqlite3
+
+import footprint
+import readiness
+import web
+from evidence import releases_for
+from history import record_scan
+from report import render
+from sources import (
+    COHORT, SOURCES, campus_projects, competition_projects, normalized, repository_releases,
+)
 
 ROOT = Path(__file__).resolve().parent
-COHORT = "https://funding.unternehmertum.de/supportedteams-2/"
-GITHUB = "https://api.github.com"
-SECTOR = re.compile(
-    r"\b(?:enterprise|infrastructure|developer|codebases?|cybersecurity|"
-    r"data (?:platform|pipeline|teams)|software|llms?)\b", re.IGNORECASE
-)
-NOISE = re.compile(
-    r"\b(?:student[- ]initiated team|student club|student assignment|digital agency|"
-    r"student association)\b",
-    re.IGNORECASE,
-)
+SOURCE_ERRORS = (OSError, ValueError, KeyError, TypeError)
+RUN_ERRORS = (*SOURCE_ERRORS, sqlite3.Error)
 
 
-class CohortParser(HTMLParser):
-    """Read names and descriptions from the programme's project cards."""
-
-    def __init__(self):
-        super().__init__()
-        self.projects = []
-        self.card = None
-        self.field = None
-
-    def handle_starttag(self, tag, attrs):
-        if tag == "utum-tile":
-            self.card = {"h2": [], "p": []}
-        elif self.card is not None and tag in self.card:
-            self.field = tag
-
-    def handle_endtag(self, tag):
-        if tag == self.field:
-            self.field = None
-        if tag == "utum-tile" and self.card is not None:
-            name, description = (
-                " ".join("".join(self.card[field]).split()) for field in ("h2", "p")
-            )
-            if name and description:
-                tags = sorted({match.group().lower() for match in SECTOR.finditer(description)})
-                noise = NOISE.search(description)
-                self.projects.append({"name": name, "tags": tags, "noise": bool(noise)})
-            self.card = None
-            self.field = None
-
-    def handle_data(self, data):
-        if self.field:
-            self.card[self.field].append(data)
-
-
-def fetch(url):
-    request = Request(url, headers={"User-Agent": "FirstTrace-Hackathon/1.0"})
-    with urlopen(request, timeout=12) as response:
-        return response.read().decode("utf-8")
-
-
-def get_releases(repositories):
-    releases = []
-    for repo in repositories:
-        data = json.loads(fetch(f"{GITHUB}/repos/{repo}/releases?per_page=100"))
-        published = [
-            release for release in data
-            if release["published_at"] and not release["draft"] and not release["prerelease"]
-        ]
-        if published:
-            first = min(published, key=lambda release: release["published_at"])
-            releases.append({
-                "title": f"{repo.split('/')[1]} · {first['tag_name']}",
-                "url": first["html_url"],
-                "date": first["published_at"][:10],
-            })
-    return sorted(releases, key=lambda release: release["date"])
-
-
-def discover(reviews):
-    parser = CohortParser()
-    parser.feed(fetch(COHORT))
-    projects = {
-        project["name"].casefold(): project for project in parser.projects
-    }
-    if not projects:
-        raise ValueError("No project cards found. Check the source page structure.")
-    releases = {}
+def collect_projects(aliases):
+    projects = {}
+    source_status = {}
     errors = []
+    # Within one organizer, rosters spell the same team differently; dedupe on a normalized key.
+    same_source = {}
+    for source, load in (("campus", campus_projects), ("competition", competition_projects)):
+        label, url = SOURCES[source]
+        warnings = []
+        try:
+            rows = load(warnings) if source == "competition" else load()
+        except SOURCE_ERRORS as error:
+            errors.append(f"{label}: {error}")
+            source_status[source] = {"state": "failed", "count": 0}
+            continue
+        errors.extend(warnings)
+        pages = len({row.get("url", url) for row in rows})
+        source_status[source] = {"state": "partial" if warnings else "fresh", "count": len(rows)}
+        if source == "competition":
+            source_status[source]["pages"] = pages
+        for row in rows:
+            source_id = same_source.setdefault(
+                (source, normalized(row["name"])), f"{source}:{row['name'].casefold()}"
+            )
+            association = aliases.get(source_id, {})
+            project_id = association.get("id", source_id)
+            project = projects.setdefault(project_id, {
+                "id": project_id,
+                "name": row["name"],
+                "tags": [],
+                "noise": False,
+                "traces": [],
+                "descriptions": [],
+            })
+            project["tags"] = sorted(set(project["tags"]) | set(row["tags"]))
+            project["noise"] = project["noise"] or row["noise"]
+            if row.get("location"):
+                project["location"] = row["location"]
+            trace = {
+                "source": label, "url": row.get("url", url),
+                "title": row.get("title", "Prototype grant directory" if source == "campus" else "Phase 1 nomination"),
+                "date": row.get("published"),
+            }
+            if association:
+                trace["identity_url"] = association["url"]
+            if trace not in project["traces"]:
+                project["traces"].append(trace)
+            description = row.get("description")
+            if description and description not in [item["text"] for item in project["descriptions"]]:
+                project["descriptions"].append({"source": label, "text": description, "url": trace["url"]})
+    if not projects:
+        raise ValueError("No discovery feeds returned projects. " + " | ".join(errors))
+    return projects, source_status, errors
+
+
+RELEASE_CACHE = ROOT / ".firsttrace/release-cache.json"
+WEB_CACHE = ROOT / ".firsttrace/web-cache.json"
+
+
+def load_release_cache():
+    """Last successful release fetch per repository, seeded from the captured demo scan."""
+    try:
+        return json.loads(RELEASE_CACHE.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        pass
+    cache = {}
+    try:
+        capture = json.loads((ROOT / "data/demo-snapshot.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return cache
+    for rows in capture.get("releases", {}).values():
+        for row in rows:
+            repo_name = row.get("title", "").split(" · ")[0]
+            entry = cache.setdefault(repo_name, {"fetched_at": capture["observed_at"], "releases": []})
+            entry["releases"].append(row)
+    return cache
+
+
+def discover(reviews, aliases, assessments=None):
+    projects, source_status, errors = collect_projects(aliases)
+    releases = {}
+    repository_count = 0
+    github_state = "fresh"
+    cache = load_release_cache()
+    cache_changed = False
+    cached_repositories = 0
     for name, review in reviews.items():
-        repositories = review.get("repositories", [])
-        if name.casefold() in projects and repositories:
-            for repository in repositories:
-                try:
-                    releases.setdefault(name, []).extend(get_releases([repository]))
-                except (OSError, ValueError, KeyError, TypeError) as error:
-                    errors.append(f"GitHub releases for {repository}: {error}")
-            releases.setdefault(name, []).sort(key=lambda release: release["date"])
+        if f"campus:{name.casefold()}" not in projects:
+            continue
+        for repo in review.get("repositories", []):
+            target = releases.setdefault(projects[f"campus:{name.casefold()}"]["name"], [])
+            try:
+                found, capped = repository_releases(repo)
+                target.extend(found)
+                repository_count += 1
+                cache[repo.split("/")[1]] = {"fetched_at": datetime.now(timezone.utc).isoformat(), "releases": found}
+                cache_changed = True
+                if capped:
+                    github_state = "partial"
+                    errors.append(f"GitHub releases for {repo}: reached the three-page limit")
+            except SOURCE_ERRORS as error:
+                github_state = "partial"
+                # Published release dates and URLs do not change, so keep the last fetched list visible.
+                previous = cache.get(repo.split("/")[1])
+                if previous:
+                    target.extend(previous["releases"])
+                    cached_repositories += 1
+                    errors.append(
+                        f"GitHub releases for {repo}: {error}. Showing {len(previous['releases'])} releases "
+                        f"fetched {previous['fetched_at'][:10]}. Set GITHUB_TOKEN to raise the rate limit."
+                    )
+                else:
+                    errors.append(f"GitHub releases for {repo}: {error}")
+    if cache_changed:
+        RELEASE_CACHE.parent.mkdir(parents=True, exist_ok=True)
+        RELEASE_CACHE.write_text(json.dumps(cache, ensure_ascii=False), encoding="utf-8")
+    source_status["github"] = {"state": github_state, "count": repository_count}
+    if cached_repositories:
+        source_status["github"]["cached"] = cached_repositories
+    assessments = assessments or {}
+    # Research every lead that could enter the inbox: tagged, reviewed or assessed.
+    reviewed = {f"campus:{name.casefold()}" for name in reviews}
+    candidates = [
+        {**project, "location": assessments.get(project["id"], {}).get("location") or project.get("location", "")}
+        for project in projects.values()
+        if project.get("tags") or project["id"] in assessments or project["id"] in reviewed
+    ]
+    research, source_status["web"] = web.collect(candidates, assessments, WEB_CACHE, errors)
+    domains = {key: {"domain": value["domain"]} for key, value in research.items()}
+    domains.update({key: value for key, value in assessments.items() if key in projects and value.get("domain")})
+    footprints, source_status["footprint"] = footprint.collect(domains, errors)
     return {
-        "observed_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "observed_at": datetime.now(timezone.utc).isoformat(timespec="microseconds"),
         "projects": list(projects.values()),
         "releases": releases,
+        "footprints": footprints,
+        "web": research,
         "errors": errors,
+        "source_status": source_status,
     }
 
 
-def rank(projects, releases, reviews):
-    ranked = []
-    filtered = []
-    for project in projects:
-        name = project["name"]
-        review = reviews.get(name, {})
-        if review.get("hold"):
-            filtered.append({
-                **project, "reason": review["hold"], "url": review["hold_url"],
-                "comparison": review.get("comparison"),
+def prepare_replay(snapshot):
+    for project in snapshot["projects"]:
+        project.setdefault("id", f"campus:{project['name'].casefold()}")
+        project.setdefault("traces", [{
+            "source": "UnternehmerTUM", "url": COHORT,
+            "title": "Prototype grant directory", "date": None,
+        }])
+    return snapshot
+
+
+def apply_cutoff(snapshot, cutoff):
+    """Keep only traces whose publication dates were known by the cutoff."""
+    projects = []
+    releases = {}
+    footprints = {}
+    for project in snapshot["projects"]:
+        traces = [
+            trace for trace in project["traces"]
+            if trace.get("date") and trace["date"] <= cutoff
+        ]
+        published_releases = [
+            release for release in releases_for(project, snapshot["releases"])
+            if release["date"] <= cutoff
+        ]
+        published_footprint = [
+            row for row in snapshot.get("footprints", {}).get(project["id"], [])
+            if row["date"] <= cutoff
+        ]
+        if traces or published_releases:
+            projects.append({
+                "id": project["id"], "name": project["name"], "traces": traces,
+                "tags": [], "noise": False,
             })
-            continue
-        if project["noise"]:
-            filtered.append({**project, "reason": "Possible club, assignment or agency", "url": COHORT})
-            continue
-        if not project["tags"]:
-            continue
-        proofs = releases.get(name, [])
-        factors = {"In scope": 1}
-        if review.get("team_url") and review.get("product_url"):
-            factors["Verified team and German base"] = 2
-        if proofs:
-            factors["Dated public release"] = 2
-        if review.get("market"):
-            factors["Analyst buyer hypothesis"] = 1
-        ranked.append({
-            **project, "review": review, "releases": proofs,
-            "factors": factors, "score": sum(factors.values()),
-        })
-    return sorted(ranked, key=lambda lead: (-lead["score"], lead["name"].casefold())), filtered
+            releases[project["name"]] = published_releases
+            footprints[project["id"]] = published_footprint
+    return {
+        **snapshot, "projects": projects, "releases": releases, "footprints": footprints, "web": {},
+        "cutoff": cutoff, "has_baseline": False,
+    }
 
 
-def link(url, label):
-    if not url.startswith("https://"):
-        raise ValueError("Source links must use HTTPS.")
-    return f'<a href="{escape(url)}">{escape(label)}</a>'
-
-
-def lead_details(lead, is_first):
-    review = lead["review"]
-    citations = link(COHORT, "UnternehmerTUM · project listing")
-    tags = ", ".join(lead["tags"])
-    details = [
-        f'<p><strong>Matched terms</strong> {escape(tags)}</p>',
-        f'<p class="muted">{citations} · publication date unavailable</p>',
-    ]
-    if review.get("team_url"):
-        details.append(f'<p><strong>Team</strong> {escape(review["team"])} · {link(review["team_url"], "TUM")}</p>')
-    if review.get("product_url"):
-        details.append(f'<p><strong>Today</strong> {escape(review["product"])} · {link(review["product_url"], "Company")}</p>')
-    if review.get("market"):
-        details.append(f'<p><strong>Why take a call?</strong> {escape(review["market"])}</p>')
-    if lead["releases"]:
-        entries = "".join(
-            f'<li><time>{escape(item["date"])}</time> {link(item["url"], item["title"])}</li>'
-            for item in lead["releases"]
+def build_inbox(snapshot, reviews, assessments):
+    observed = (snapshot.get("cutoff") or snapshot.get("observed_at") or "")[:10]
+    today = date.fromisoformat(observed) if observed else date.today()
+    by_id = {f"campus:{name.casefold()}": review for name, review in reviews.items()}
+    leads = []
+    for project in snapshot["projects"]:
+        review = by_id.get(project["id"], {})
+        assessment = assessments.get(project["id"], {})
+        hold = assessment.get("hold") or review.get("hold")
+        hold_url = assessment.get("hold_url") or review.get("hold_url")
+        if project["noise"] and not hold:
+            hold, hold_url = "Possible student group, assignment or agency.", COHORT
+        releases = sorted(
+            releases_for(project, snapshot["releases"]), key=lambda row: row["date"]
         )
-        details.append(f'<h3>Earliest releases observed per repository</h3><ul>{entries}</ul>')
-        details.append('<p class="muted">Days ahead of database coverage unavailable. The historical listing date is unverified.</p>')
-    funding = review.get("funding", "Equity status unreviewed.")
-    funding_link = f' · {link(review["funding_url"], "Database check")}' if review.get("funding_url") else ""
-    details.append(f'<p><strong>Funding</strong> {escape(funding)}{funding_link}</p>')
-    factors = " · ".join(f"{name} +{weight}" for name, weight in lead["factors"].items())
-    details.append(f'<p class="muted">{escape(factors)}</p>')
-    opened = " open" if is_first else ""
-    return (
-        f'<details{opened}><summary>{escape(lead["name"])}'
-        f'<span>{lead["score"]}/6 evidence points</span></summary>'
-        f'<div class="detail">{"".join(details)}</div></details>'
-    )
+        if not project["tags"] and not hold and not (snapshot.get("cutoff") and (project["traces"] or releases)):
+            continue
+        rosters = {trace["title"] for trace in project["traces"] if trace["source"] == "BayStartUP"}
+        momentum = next((
+            stage for stage in ("Winner", "Finalist", "Phase 2 winner", "Phase 2 nomination")
+            if len(rosters) > 1 and any(stage in title for title in rosters)
+        ), None)
+        priority = "Adjacent"
+        if review.get("market") or assessment.get("fit") == "Core fit":
+            priority = "Core fit"
+        elif "Digital tech" not in project["tags"] and not any(
+            tag in {"enterprise", "developer", "infrastructure", "software"} for tag in project["tags"]
+        ):
+            priority = "Unreviewed"
+
+        research = snapshot.get("web", {}).get(project["id"])
+        facts = (research or {}).get("legal") or {}
+        if facts.get("stage") == "Registered association (e.V.)" and not hold:
+            hold, hold_url = "Registered association (e.V.) per its legal notice: typical of student initiatives, not a company.", research.get("legal_url")
+        location = assessment.get("location", project.get("location", ""))
+        if not location and facts.get("german") and facts.get("address"):
+            location = facts["address"].split(" ", 1)[-1]
+        lead = {
+            **project,
+            "descriptions": project.get("descriptions", []),
+            "web": research,
+            "location": location,
+            "assessment": assessment,
+            "review": {key: value for key, value in review.items() if key != "repositories"},
+            "releases": releases,
+            "footprint": sorted(snapshot.get("footprints", {}).get(project["id"], []), key=lambda row: row["date"]),
+            "momentum": momentum,
+            "hold": hold,
+            "hold_url": hold_url,
+            "fit": priority,
+            "evidence": sum((
+                bool(review.get("team_url") or assessment.get("team") or facts.get("directors")),
+                bool(review.get("product_url") or assessment.get("product") or research),
+                bool(releases), len(project["traces"]) > 1,
+            )),
+        }
+        lead.update(readiness.assess(lead, today))
+        leads.append(lead)
+    return sorted(leads, key=lambda row: (bool(row["hold"]), -row["score"], row["name"].casefold()))
 
 
-def render(snapshot, ranked, filtered, replay):
-    mode = "Snapshot replay" if replay else "Live scan"
-    cards = "".join(lead_details(lead, index == 0) for index, lead in enumerate(ranked))
-    exclusions = "".join(
-        f'<li><strong>{escape(project["name"])}</strong> {escape(project["reason"])} '
-        f'{link(project["url"], "Source")}</li>' for project in filtered
-    )
-    comparisons = []
-    for project in filtered:
-        case = project.get("comparison")
-        if case:
-            gap = (date.fromisoformat(case["baseline_date"]) - date.fromisoformat(case["signal_date"])).days
-            comparisons.append(
-                f'<p><strong>{escape(project["name"])} · {gap} days</strong> from '
-                f'{link(case["signal_url"], "competition nomination")} '
-                f'({escape(case["signal_date"])}) to '
-                f'{link(case["baseline_url"], "press coverage of pre-seed")} '
-                f'({escape(case["baseline_date"])}).</p>'
-            )
-    comparison_section = (
-        '<h2>Historical comparison</h2>' + "".join(comparisons)
-        + '<p class="muted">Selected retrospectively. This gap compares source publication dates. '
-        'The engine first observed this case in the current scan.</p>'
-        if comparisons else ""
-    )
-    errors = "".join(f'<li>{escape(error)}</li>' for error in snapshot["errors"])
-    error_notice = f"<h2>Source warnings</h2><ul>{errors}</ul>" if errors else ""
-    return f"""<!doctype html>
-<html lang="en">
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>FirstTrace · Sourcing desk</title>
-<style>
-:root {{color-scheme: light; --ink:#183229; --paper:#f4f3e9; --line:#d5ded0; --muted:#486154}}
-* {{box-sizing:border-box}}
-body {{margin:0;background:var(--paper);color:var(--ink);font:16px/1.55 system-ui,sans-serif}}
-header {{background:#16392e;color:#faf9ef;padding:44px max(24px,calc((100% - 920px)/2))}}
-header p {{margin:0;color:#dae9ce}}
-h1 {{font:clamp(46px,8vw,86px)/.95 Georgia,serif;margin:9px 0 17px;letter-spacing:-.055em}}
-main {{max-width:968px;margin:auto;padding:28px 24px 48px}}
-.meta {{display:flex;flex-wrap:wrap;gap:6px 24px;color:var(--muted);margin-bottom:26px}}
-h2 {{font:32px/1.2 Georgia,serif;margin:28px 0 12px}}
-h3 {{font-size:1rem;margin-bottom:0}}
-details {{background:#fffdf6;border:1px solid var(--line);border-radius:9px;margin:9px 0}}
-summary {{cursor:pointer;padding:14px 18px;font-weight:700;overflow-wrap:anywhere}}
-summary span {{display:inline-block;margin-left:12px;color:var(--muted);font-weight:500;font-size:.87rem}}
-.detail {{border-top:1px solid var(--line);padding:0 18px 8px}}
-.muted,time {{color:var(--muted);font-size:.89rem}}
-a {{color:#20583f;text-underline-offset:.18em}}
-a:focus-visible,summary:focus-visible {{outline:2px solid #27684e;outline-offset:2px}}
-li {{margin:8px 0}}
-</style>
-<header><p>Munich · B2B software and infrastructure</p><h1>FirstTrace</h1><p>Early startup signals for the HTGF sourcing desk</p></header>
-<main>
-<div class="meta"><strong>{mode}</strong><time>{escape(snapshot["observed_at"])}</time>
-<span>{len(snapshot["projects"])} scanned · {len(ranked)} in scope · {len(filtered)} held aside</span></div>
-{error_notice}
-<h2>Lead inbox</h2>
-<p>Evidence points indicate what we can verify. Start with the team and its earliest dated product trace.</p>
-{cards or "<p>No matching projects were found.</p>"}
-<details><summary>Held aside ({len(filtered)})</summary><div class="detail"><ul>{exclusions}</ul></div></details>
-{comparison_section}
-</main>
-</html>
-"""
+def load_config():
+    reviews = json.loads((ROOT / "data/reviews.json").read_text(encoding="utf-8"))
+    config = json.loads((ROOT / "data/assessments.json").read_text(encoding="utf-8"))
+    return reviews, config
+
+
+def run_live(history, output, snapshot_path=None, server=False):
+    """Scan public sources, record history, write the report and return a short summary."""
+    reviews, config = load_config()
+    assessments = config["stages"]
+    snapshot = discover(reviews, config["aliases"], assessments)
+    record_scan(history, snapshot, assessments)
+    snapshot.update(reviews=reviews, assessments=assessments)
+    if snapshot_path:
+        snapshot_path.parent.mkdir(parents=True, exist_ok=True)
+        snapshot_path.write_text(json.dumps(snapshot, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    leads = build_inbox(snapshot, reviews, assessments)
+    output.write_text(render(snapshot, leads, False, server=server), encoding="utf-8")
+    return summarize(snapshot, leads)
+
+
+def summarize(snapshot, leads):
+    held = sum(bool(lead["hold"]) for lead in leads)
+    return {
+        "observed_at": snapshot["observed_at"], "scanned": len(snapshot["projects"]),
+        "inbox": len(leads) - held, "held": held,
+        "new_signals": sum(bool(lead.get("changes")) for lead in leads),
+        "has_baseline": snapshot.get("has_baseline", False), "errors": snapshot["errors"],
+    }
 
 
 def main():
@@ -251,21 +300,49 @@ def main():
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--replay", type=Path, help="Read a saved scan and label the report as replay")
     mode.add_argument("--snapshot", type=Path, help="Save a live scan for later replay")
+    mode.add_argument("--serve", action="store_true",
+                      help="Run a local sourcing desk with a Run live scan button")
     parser.add_argument("--output", type=Path, default=Path("report.html"))
+    parser.add_argument("--history", type=Path, default=ROOT / ".firsttrace/history.sqlite3")
+    parser.add_argument("--as-of", type=date.fromisoformat, metavar="YYYY-MM-DD",
+                        help="With --replay, show only dated evidence published by this date")
+    parser.add_argument("--port", type=int, default=8765, help="With --serve, local port (default 8765)")
+    parser.add_argument("--every", type=float, metavar="HOURS",
+                        help="With --serve, rescan automatically at this interval")
     args = parser.parse_args()
+    if args.as_of and not args.replay:
+        parser.error("--as-of requires --replay")
+    if (args.every or args.port != 8765) and not args.serve:
+        parser.error("--every and --port require --serve")
+    if args.every is not None and args.every < 0.25:
+        parser.error("--every must be at least 0.25 hours to respect source rate limits")
+    if args.serve:
+        from server import serve
+        serve(args.history, args.port, args.every)
+        return
     try:
-        reviews = json.loads((ROOT / "data/reviews.json").read_text(encoding="utf-8"))
-        snapshot = (
-            json.loads(args.replay.read_text(encoding="utf-8")) if args.replay else discover(reviews)
-        )
-        if args.snapshot:
-            args.snapshot.write_text(json.dumps(snapshot, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-        ranked, filtered = rank(snapshot["projects"], snapshot["releases"], reviews)
-        args.output.write_text(render(snapshot, ranked, filtered, bool(args.replay)), encoding="utf-8")
-    except (OSError, KeyError, ValueError, TypeError) as error:
+        if args.replay:
+            reviews, config = load_config()
+            assessments = config["stages"]
+            snapshot = prepare_replay(json.loads(args.replay.read_text(encoding="utf-8")))
+            reviews = snapshot.get("reviews", reviews)
+            assessments = snapshot.get("assessments", assessments)
+            if args.as_of:
+                snapshot = apply_cutoff(snapshot, args.as_of.isoformat())
+                reviews, assessments = {}, {}
+            leads = build_inbox(snapshot, reviews, assessments)
+            args.output.write_text(render(snapshot, leads, True), encoding="utf-8")
+            summary = summarize(snapshot, leads)
+        else:
+            summary = run_live(args.history, args.output, args.snapshot)
+    except RUN_ERRORS as error:
         parser.exit(1, f"Scan failed: {error}\n")
-    print(f"{len(snapshot['projects'])} scanned, {len(ranked)} in scope, {len(filtered)} held aside")
-    for warning in snapshot["errors"]:
+
+    print(f"{summary['scanned']} scanned, {summary['inbox']} in inbox, {summary['held']} held aside")
+    if summary["has_baseline"]:
+        count = summary["new_signals"]
+        print(f"{count} {'lead' if count == 1 else 'leads'} with new signals since the previous scan")
+    for warning in summary["errors"]:
         print(f"Source warning: {warning}")
     print(args.output.resolve())
 
