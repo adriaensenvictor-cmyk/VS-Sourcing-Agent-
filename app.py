@@ -9,6 +9,7 @@ from discovery_pipeline import run_discovery
 from emergence import DISCOVERY_SOURCES
 from founder_signals import track_record
 from historical_replay import render_replay
+from incubator_directory import BVIZ_DIRECTORY, FEDERAL_NETWORK, PROGRAMME_FINDER, read_centres
 from profile_evidence import profile_for
 from scout_desk import render_dossier, render_sources, reported_stage
 from scout_filters import (
@@ -42,14 +43,41 @@ div[data-testid="stTabs"] [role="tablist"] {overflow-x:auto}
 def open_queued_lead(lead_id):
     st.session_state.update(workspace="Screening", data_mode=LIVE_MODE, lead=lead_id,
                             geography=ANYWHERE, company_age="Any age", query="",
-                            funding=[], stages=[], sectors=[], founder_history_filter="Any background", **{"shortlist-Live discovery": False,
+                            funding=[], stages=[], sectors=[], early_follow_up=False, founder_history_filter="Any background", **{"shortlist-Live discovery": False,
                             "watch-Live discovery": False, "review_score": 0})
 
 
-page = st.sidebar.selectbox("Workspace", ["Screening", "New since review", "Historical replay"], key="workspace")
+page = st.sidebar.selectbox("Workspace", ["Screening", "New since review", "Incubators in Germany", "Historical replay"], key="workspace")
 if page == "Historical replay":
     render_replay()
     st.stop()
+
+@st.cache_data(ttl=3600, show_spinner="Reading the BVIZ directory…")
+def incubator_centres():
+    return read_centres()
+
+
+if page == "Incubators in Germany":
+    st.header("Incubators in Germany")
+    st.caption("BVIZ member centres · Browse the network and open the original programme sites.")
+    query = st.text_input("Search centre or address", placeholder="e.g. Berlin or Leipzig").strip().casefold()
+    try:
+        centres = incubator_centres()
+    except (OSError, ValueError):
+        st.warning("The directory is temporarily unavailable. Open the original listings below.")
+    else:
+        matches = [row for row in centres if query in f'{row["Centre"]} {row["Address"]}'.casefold()]
+        st.caption(f"{len(matches)} of {len(centres)} centre locations")
+        if matches:
+            st.dataframe(matches, hide_index=True, use_container_width=True,
+                         column_config={"Website": st.column_config.LinkColumn("Official website")})
+        else:
+            st.info("No centre matches this search.")
+    st.link_button("Open BVIZ directory", BVIZ_DIRECTORY)
+    st.link_button("Browse de:hub programmes", PROGRAMME_FINDER)
+    st.link_button("See the federal Startup Factories network", FEDERAL_NETWORK)
+    st.stop()
+
 
 store = ScoutInbox()
 notices = store.inbox()
@@ -134,6 +162,8 @@ with st.expander("Funding, sector and review filters"):
     include_unknown = st.checkbox("Include companies with unverified age", value=True)
     shortlist_only = st.toggle("Show shortlisted only", value=not is_snapshot, key=f"shortlist-{mode}")
     saved_only = st.checkbox("Show watched companies", key=f"watch-{mode}")
+    early_only = st.checkbox("Early follow-up only", key="early_follow_up",
+                             help="Show sourced early projects from the full queue, including those yet to report an MVP or pilot.")
     limits = st.multiselect("Funding", ["Unknown · verification required", "No public round found in scoped review", "Funding round reported"], key="funding")
     stage_options = sorted({reported_stage(row) for row in dashboard_rows(outcome)})
     stages = st.multiselect("Reported funding stage", stage_options, key="stages")
@@ -143,7 +173,7 @@ with st.expander("Funding, sector and review filters"):
                         help="Scores use 60 points for the team and 40 for the project. At zero, pending assessments stay visible.")
 
 decisions = store.decisions(outcome["mode"])
-rows = dashboard_rows(outcome, shortlist_only=shortlist_only and not saved_only)
+rows = dashboard_rows(outcome, shortlist_only=shortlist_only and not (saved_only or early_only))
 sector_options = sorted({row["sector"] for row in rows})
 sectors = st.multiselect("Sector", sector_options, placeholder="All sectors", key="sectors")
 leads = []
@@ -168,6 +198,8 @@ for item in rows:
         fit = age_fit(formation_record(item, profile), 3 if age == "Up to 3 years" else 2, date.today())
         if fit is False or (fit is None and not include_unknown):
             continue
+    if early_only and not item["early_follow_up"]:
+        continue
     if saved_only and decisions.get(item["id"], {}).get("decision") != "Watch":
         continue
     leads.append(item)

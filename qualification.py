@@ -53,6 +53,8 @@ SIGNALS = {
 
 # Conservative cues. Text matches are hypotheses until reviewed.
 INTENT_PATTERNS = {
+    "formation_intent": r"\b(?:we(?:'re| are)|I(?:'m| am)) (?:forming|starting|founding|building) "
+                        r"(?:a|an|our) (?:new )?(?:company|start[- ]?up)\b",
     "incorporation": r"\b(?:incorporated|registered (?:our|the) company)\b",
     "launch": r"\b(?:we launched|now available|public beta|went live)\b",
     "waitlist": r"\b(?:join (?:our|the) (?:waitlist|waiting list)|sign up for early access)\b",

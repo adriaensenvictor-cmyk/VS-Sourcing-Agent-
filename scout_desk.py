@@ -78,6 +78,8 @@ def render_dossier(item, store, saved, notices):
         st.markdown(f'<img class="venture-mark" alt="" src="data:image/png;base64,{b64encode(asset.read_bytes()).decode()}">',
                     unsafe_allow_html=True)
     st.header(item["name"])
+    if item["early_follow_up"]:
+        st.caption("Early follow-up · programme or university evidence. Product readiness and commercial traction need verification.")
     description = item.get("description") or "Description unavailable."
     st.text(description[:550] + ("…" if len(description) > 550 else ""))
     a, b = st.columns([1, 2])

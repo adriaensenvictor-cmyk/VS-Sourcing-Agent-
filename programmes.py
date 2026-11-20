@@ -109,12 +109,149 @@ def scan_baystartup(warnings, limit=30):
                           BAYSTARTUP, country="Germany" if german_location(location) else None,
                           cohort="Munich Business Plan Competition 2026")
             row["evidence"].append({"signal": "Competition location", "excerpt": location})
-            if published:
-                row["milestones"] = [{"date": published, "url": BAYSTARTUP,
-                                      "label": "Named on the BayStartUP Phase 1 shortlist"}]
-            rows.append(row)
+            rows.append(cohort_listing(row, published, label="Named on the BayStartUP Phase 1 shortlist"))
             if len(rows) == limit:
                 return rows
     if not rows:
         raise ValueError("BayStartUP nominations not found")
     return rows
+
+
+FRAUNHOFER = ("https://www.fraunhofer.de/de/presse/presseinformationen/2026/september-2026/"
+             "fraunhofer-auf-der-bits-and-pretzels-2026.html")
+SPINLAB = "https://www.spinlab.co/news/spinlab-launches-20th-class"
+ROOTCAMP = "https://www.root.camp/blog/agtech-and-foodtech-startups-to-watch-in-2026"
+HPI = "https://www.engine.hpi.de/our-ecosystem"
+
+
+def cohort_listing(row, published, *, label="Named in programme announcement"):
+    """Preserve the programme publication date separately from company age."""
+    if published:
+        row["milestones"] = [
+            {"date": published, "url": row["source_url"], "label": label}
+        ]
+        elapsed = (datetime.now(timezone.utc).date() - datetime.fromisoformat(published).date()).days
+        if 0 <= elapsed <= 365:
+            row["evidence"].append({"signal": "Recent programme selection", "excerpt": row["description"]})
+    return row
+
+
+def hubspot_date(page, warnings):
+    stamp = text(page.select_one("#hubspot-author_data"))
+    try:
+        return datetime.strptime(stamp.rsplit(",", 1)[0], "%b %d, %Y").date().isoformat()
+    except ValueError:
+        warnings.append("Programme publication date could not be parsed.")
+        return None
+
+
+def cohort_section(page, heading):
+    marker = next((h for h in page.select("h2") if heading in text(h)), None)
+    if not marker:
+        raise ValueError("Programme cohort heading could not be located")
+    for node in marker.next_siblings:
+        tag = getattr(node, "name", None)
+        if tag == "h2":
+            break
+        if tag:
+            yield node
+
+
+def scan_rootcamp(warnings):
+    page = get_html(ROOTCAMP)
+    published = hubspot_date(page, warnings)
+    rows = []
+    for heading in cohort_section(page, "This is RootCamp Batch"):
+        if heading.name != "h3":
+            continue
+        title, sep, country = text(heading).partition(" | ")
+        paragraph = heading.find_next_sibling()
+        if not sep or not paragraph or paragraph.name != "p":
+            continue
+        link = paragraph.select_one("a[href]")
+        row = project("rootcamp:" + title.casefold(), title, text(paragraph), "RootCamp", ROOTCAMP,
+                      country=country, website=project_url(link["href"]) if link else None,
+                      cohort="RootCamp Batch 8")
+        rows.append(cohort_listing(row, published))
+    if not rows:
+        raise ValueError("RootCamp teams could not be read")
+    return rows
+
+
+def scan_spinlab(warnings):
+    page = get_html(SPINLAB)
+    published = hubspot_date(page, warnings)
+    rows = []
+    for paragraph in cohort_section(page, "new SpinLab Startups"):
+        link = paragraph.select_one("a[href]")
+        title = text(link)
+        if paragraph.name != "p" or not title:
+            continue
+        row = project("spinlab:" + title.casefold(), title, text(paragraph), "SpinLab", SPINLAB,
+                      website=project_url(link["href"]), cohort="SpinLab Class 20")
+        rows.append(cohort_listing(row, published))
+    if not rows:
+        raise ValueError("SpinLab teams could not be read")
+    return rows
+
+
+def scan_fraunhofer(warnings):
+    page = get_html(FRAUNHOFER)
+    heading = next((node for node in page.select(".fhg-richtext p")
+                    if "Gründerteams" in text(node) and "aktuell" in text(node)
+                    and "unterstützt" in text(node)), None)
+    if not heading:
+        raise ValueError("Fraunhofer team section could not be read")
+    stamp = text(page.select_one("time"))
+    match = re.fullmatch(r"(\d{1,2})\. September (\d{4})", stamp)
+    published = None
+    if match:
+        try:
+            published = datetime(int(match[2]), 9, int(match[1])).date().isoformat()
+        except ValueError:
+            pass
+    if not published:
+        warnings.append("Fraunhofer programme publication date could not be parsed.")
+    rows = []
+    for node in heading.find_next_siblings():
+        if node.name != "h4":
+            continue
+        title, sep, _subtitle = text(node).partition(":")
+        paragraph = node.find_next_sibling()
+        if not sep or not paragraph or paragraph.name != "p":
+            continue
+        row = project("fraunhofer:" + title.casefold(), title, text(paragraph),
+                      "Fraunhofer AHEAD", FRAUNHOFER, cohort="Fraunhofer Venture and AHEAD at Bits & Pretzels")
+        rows.append(cohort_listing(row, published))
+    if not rows:
+        raise ValueError("Fraunhofer team descriptions could not be read")
+    return rows
+
+
+def scan_hpi(_warnings):
+    rows = []
+    for card in get_html(HPI).select(".linkblock--startups"):
+        title = text(card.select_one("p.weight--500"))
+        description = text(card.select_one("p.paragraph--large"))
+        attribution = card.select(".grid--foundet-by p")
+        if not title or not description:
+            continue
+        row = project("hpi:" + title.casefold(), title, description, "HPI Engine", HPI)
+        if len(attribution) == 2 and text(attribution[0]) == "Founded by:":
+            names = [name.strip() for name in re.split(r",|\s+and\s+", text(attribution[1])) if name.strip()]
+            row["founders"] = [{"name": name, "source_url": HPI, "role": "Founder"} for name in names]
+        rows.append(row)
+    if not rows:
+        raise ValueError("HPI ecosystem cards could not be read")
+    return rows
+
+
+READERS = {
+    "UnternehmerTUM Incubator": scan_unternehmertum,
+    "imec.istart": scan_imec,
+    "BayStartUP roster": scan_baystartup,
+    "Fraunhofer AHEAD": scan_fraunhofer,
+    "SpinLab": scan_spinlab,
+    "RootCamp": scan_rootcamp,
+    "HPI Engine": scan_hpi,
+}

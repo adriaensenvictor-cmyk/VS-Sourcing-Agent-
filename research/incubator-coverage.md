@@ -11,9 +11,17 @@
 | [imec.istart](https://www.imecistart.com/portfolio?sort_year=desc) | Public portfolio cards, listed country, profile links and recent programme year | Up to 25 recent cards. The programme year is retained as context. |
 | Show HN and GitHub | Existing developer and launch signals | Existing scan bounds and source diagnostics apply. |
 
+## German incubator directory and latest connectors
+
+The **Incubators in Germany** workspace reads the public [BVIZ member directory](https://innovationszentren.de/mitglieder-zentren/ordentliche-mitglieder/) and links to the [de:hub Programme Finder](https://www.de-hub.de/en/programfinder/) and the [federal Startup Factories network](https://www.bundeswirtschaftsministerium.de/Redaktion/DE/Dossier/startup-factories-gewinner.html). These networks include incubators, accelerators and technology centres. Their public coverage is partial. Centre listings are kept separate from startup leads.
+
+The live scanner now also reads the current linked lists from [Fraunhofer AHEAD](https://www.fraunhofer.de/de/presse/presseinformationen/2026/september-2026/fraunhofer-auf-der-bits-and-pretzels-2026.html), [SpinLab Class 20](https://www.spinlab.co/news/spinlab-launches-20th-class), [RootCamp Batch 8](https://www.root.camp/blog/agtech-and-foodtech-startups-to-watch-in-2026) and [HPI Engine](https://www.engine.hpi.de/our-ecosystem). Editorial roster links are edition-specific. Programme membership is independent of a company's country, incorporation date, funding and product readiness.
+
+**Early follow-up only** shows sourced ventures without a detected commercial milestone. A current named programme selection, a documented university path or explicit company-formation intent from a named founder can qualify a lead before an MVP, pilot or incorporation. Geography still controls the shortlist.
+
 ## Additional official sources to evaluate
 
-- Germany: [HPI Engine](https://www.engine.hpi.de/our-ecosystem) for named teams, [Fraunhofer AHEAD](https://www.ahead.fraunhofer.de/en/application.html) for research transfer, [TU Berlin’s transfer portfolio](https://www.patentplus-transfer.io/tu-berlin/spinoffs) for spin-off ages, and [German Startup Association directory](https://mitglieder.deutschestartups.org/memberview/mitgliederliste/) for finding regional programmes.
+- Germany: [TU Berlin’s transfer portfolio](https://www.patentplus-transfer.io/tu-berlin/spinoffs) for spin-off ages, and [German Startup Association directory](https://mitglieder.deutschestartups.org/memberview/mitgliederliste/) for finding regional programmes.
 - Rest of Europe: [ETH Zürich venture directory](https://entrepreneurship.ethz.ch/startup-stories/explore-startup-portraits-and-success-stories/uebersicht-eth-spin-offs.html) and [Delft Enterprises](https://delftenterprises.tudelftcampus.nl/projects) for university spin-offs. Programme affiliation and legally documented operation in Germany are separate diligence facts.
 
 ## Founder signals

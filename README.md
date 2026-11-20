@@ -33,8 +33,10 @@ The score is provisional while some criteria remain open. A missing axis or conf
 leaves the overall grade pending. Germany comes first, then the evaluation score, with early
 signals breaking ties or ordering pending candidates. The same eligibility rules govern shortlisting.
 
-Live discovery also reads UnternehmerTUM Incubator, imec.istart and the BayStartUP
-2026 competition roster. Open **All locations** to review records that lack location
+Live discovery also reads UnternehmerTUM Incubator, imec.istart, the BayStartUP
+2026 roster, Fraunhofer AHEAD, SpinLab, RootCamp and HPI Engine. The **Incubators
+in Germany** workspace indexes public German centre listings. **Early follow-up
+only** shows sourced projects with product and traction details still to verify. Open **All locations** to review records that lack location
 evidence. See [source coverage and founder signals](research/incubator-coverage.md)
 for limits and additional programmes. The [exact discovery and scoring rules](research/discovery-rules.md) are documented in French.
 

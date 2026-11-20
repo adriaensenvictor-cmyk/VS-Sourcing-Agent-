@@ -6,7 +6,7 @@ from datetime import date
 from pathlib import Path
 
 from discovery_pipeline import campus_record
-from emergence import rank_candidates
+from emergence import early_founder_follow_up, rank_candidates
 from engine import load_research_snapshot
 from founder_fit import FOUNDER_WEIGHT, VENTURE_WEIGHT, evaluate, review_priority, weighted_points
 
@@ -65,6 +65,12 @@ def dashboard_rows(run, *, shortlist_only=False):
         founders = row.get("founders", [])
         earliest = row.get("earliest_verified_public_signal") or {}
         is_shortlisted = row["id"] in selected
+        exclusions = set(row.get("shortlist_exclusions") or [])
+        early_review = (
+            not row.get("commercialization_signals")
+            and early_founder_follow_up([row])
+            and not exclusions & {"funded_or_later_stage", "project_intent_risk"}
+        )
         result.append({
             **row,
             "name": row["title"], "sector": row.get("sector") or "Unclassified",
@@ -82,7 +88,8 @@ def dashboard_rows(run, *, shortlist_only=False):
             "earliest_public_date": earliest.get("date"),
             "public_trace_age": public_trace_age(earliest.get("date"), run.get("generated_at")),
             "shortlisted": is_shortlisted,
-            "lead_status": "Shortlisted" if is_shortlisted else "Additional candidate",
+            "early_follow_up": early_review,
+            "lead_status": "Early follow-up" if early_review else ("Shortlisted" if is_shortlisted else "Additional candidate"),
             "mode": run.get("mode", "research_snapshot"),
         })
     result.sort(key=lambda row: review_priority(row["location"], row["founder_venture_fit"]["score"], row["score"]),

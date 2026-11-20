@@ -109,12 +109,20 @@ def read_team(entry):
                 score += weight
                 break
     labels = {item["signal"] for item in signals}
-    if not labels & {"Early project stage", "Product validation"}:
-        return None
-    if not labels & {"Academic origin", "Founding team", "Product validation"}:
+    cues = detect_intent(" ".join(page.paragraphs), url)
+    has_product_signal = bool(labels & {"Early project stage", "Product validation"})
+    has_venture_signal = bool(labels & {"Academic origin", "Founding team", "Product validation"})
+    formation_intent = any(cue["type"] == "formation_intent" for cue in cues)
+    named_early_team = bool(page.founders) and (
+        formation_intent or (not has_product_signal and has_venture_signal)
+    )
+    if not (has_product_signal and has_venture_signal) and not named_early_team:
         return None
     if any(FUNDING.search(paragraph) for paragraph in page.paragraphs):
         return None
+    if named_early_team:
+        signals.append({"signal": "University team in formation",
+                        "excerpt": "TUM Venture Labs names the founders and describes their venture or research origins."})
 
     links = {"github": [], "linkedin": []}
     for href in page.links:
@@ -142,7 +150,7 @@ def read_team(entry):
         "evidence": signals,
         "founders": [{"name": name, "role": "Founder", "source_url": url}
                      for name in dict.fromkeys(page.founders)],
-        "intent_cues": detect_intent(" ".join(page.paragraphs), url),
+        "intent_cues": cues,
         "links": links,
     }
 
