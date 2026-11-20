@@ -20,6 +20,20 @@ def _read_json(path):
         raise ValueError("{}: {}".format(path, error)) from None
 
 
+def _candidate_rows(candidate_data):
+    if isinstance(candidate_data, dict) and isinstance(candidate_data.get("candidates"), list):
+        candidates = candidate_data["candidates"]
+    elif isinstance(candidate_data, dict):
+        candidates = [candidate_data]
+    elif isinstance(candidate_data, list):
+        candidates = candidate_data
+    else:
+        raise ValueError("candidate input must be a JSON object, candidate array, or First Trace envelope")
+    if not candidates or any(not isinstance(item, dict) for item in candidates):
+        raise ValueError("candidate input must contain one or more candidate objects")
+    return candidates
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("candidates", help="JSON object or array from radar.py --json")
@@ -37,14 +51,7 @@ def main(argv=None):
 
     try:
         candidate_data = _read_json(args.candidates)
-        if isinstance(candidate_data, dict):
-            candidates = [candidate_data]
-        elif isinstance(candidate_data, list) and all(isinstance(item, dict) for item in candidate_data):
-            candidates = candidate_data
-        else:
-            raise ValueError("candidate input must be one JSON object or an array of objects")
-        if not candidates:
-            raise ValueError("candidate input contains no candidates")
+        candidates = _candidate_rows(candidate_data)
 
         investor_profile = _read_json(args.investor_profile) if args.investor_profile else None
         if investor_profile is not None and not isinstance(investor_profile, dict):
