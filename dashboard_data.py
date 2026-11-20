@@ -7,6 +7,7 @@ from pathlib import Path
 
 from discovery_pipeline import campus_record
 from emergence import rank_candidates
+from founder_fit import evaluate
 from engine import load_research_snapshot
 
 ROOT = Path(__file__).resolve().parent
@@ -18,7 +19,8 @@ FUNDING_LABELS = {
 CSV_FIELDS = ("name", "sector", "location", "origin", "score", "evidence_confidence",
               "lead_status", "funding_status", "funding_label", "source_url", "project_url",
               "earliest_public_date", "shortlisted", "mode", "public_trace_age",
-              "source_urls", "founder_evidence", "timeline", "claims", "funding_review")
+              "source_urls", "founder_evidence", "timeline", "claims", "funding_review",
+              "early_signal_score", "founder_venture_fit")
 
 
 def load_demo_run():
@@ -59,6 +61,11 @@ def dashboard_rows(run, *, shortlist_only=False):
         founders = row.get("founders", [])
         earliest = row.get("earliest_verified_public_signal") or {}
         is_shortlisted = row["id"] in selected
+        fit = row.get("founder_venture_fit")
+        if fit is None:
+            # Historical dossiers retain their original as-of date.
+            stamp = run.get("generated_at")
+            fit = evaluate([row], date.fromisoformat(stamp[:10]) if stamp else date.min)
         result.append({
             **row,
             "name": row["title"], "sector": row.get("sector") or "Unclassified",
@@ -68,6 +75,7 @@ def dashboard_rows(run, *, shortlist_only=False):
             "team": " · ".join(person["name"] for person in founders) or row.get("team", ""),
             "founder_identified": bool(founders or row.get("team")),
             "score": row["founder_emergence_score"],
+            "early_signal_score": row["founder_emergence_score"], "founder_venture_fit": fit,
             "score_components": row.get("emergence_dimensions", {}),
             "funding_status": status,
             "funding_label": FUNDING_LABELS.get(status, FUNDING_LABELS["unknown"]),
@@ -98,7 +106,8 @@ def export_csv(rows):
     for row in rows:
         values = {key: row.get(key, "") for key in CSV_FIELDS}
         for column, key in (("source_urls", "sources"), ("founder_evidence", "founders"),
-                            ("timeline", "timeline"), ("claims", "claims"), ("funding_review", "funding")):
+                            ("timeline", "timeline"), ("claims", "claims"), ("funding_review", "funding"),
+                            ("founder_venture_fit", "founder_venture_fit")):
             values[column] = json.dumps(row.get(key), ensure_ascii=False)
         for key, value in values.items():
             if isinstance(value, str) and value.lstrip().startswith(("=", "+", "-", "@")):
