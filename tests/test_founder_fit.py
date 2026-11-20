@@ -164,6 +164,7 @@ class FitTests(unittest.TestCase):
             app = AppTest.from_file(str(ROOT / "app.py")).run()
             app.radio[0].set_value("Verified research snapshot")
             app.sidebar.button[0].click().run()
+            app.toggle[0].set_value(True).run()
             app.selectbox[0].select("tu-berlin:research:simra").run()
             ask.assert_not_called()
             ask.side_effect = OSError("offline")

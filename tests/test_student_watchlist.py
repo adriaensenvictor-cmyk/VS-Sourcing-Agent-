@@ -84,6 +84,8 @@ class StudentWatchTests(unittest.TestCase):
     def test_streamlit_page_snapshot_live_filter_and_download(self):
         app = AppTest.from_file(str(ROOT / "pages/Student_projects.py")).run()
         self.assertFalse(app.exception)
+        self.assertFalse(app.subheader)
+        app.toggle[0].set_value(True).run()
         app.selectbox[0].select("Slovakia").run()
         self.assertTrue(any("Scheduled for 2026-11-25" in x.value for x in app.caption))
         with patch("student_watchlist.fetch", side_effect=AssertionError("unexpected fetch")), patch(

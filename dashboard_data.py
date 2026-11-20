@@ -7,6 +7,7 @@ from pathlib import Path
 
 from discovery_pipeline import campus_record
 from emergence import rank_candidates
+from pre_vc import annotate
 from founder_fit import evaluate
 from engine import load_research_snapshot
 
@@ -20,7 +21,7 @@ CSV_FIELDS = ("name", "sector", "location", "origin", "score", "evidence_confide
               "lead_status", "funding_status", "funding_label", "source_url", "project_url",
               "earliest_public_date", "shortlisted", "mode", "public_trace_age",
               "source_urls", "founder_evidence", "timeline", "claims", "funding_review",
-              "early_signal_score", "founder_venture_fit")
+              "early_signal_score", "founder_venture_fit", "pre_vc")
 
 
 def load_demo_run():
@@ -86,15 +87,16 @@ def dashboard_rows(run, *, shortlist_only=False):
             "lead_status": "Shortlisted" if is_shortlisted else "Additional candidate",
             "mode": run.get("mode", "research_snapshot"),
         })
-    return result
+    return annotate(result)
 
 
 def export_json(run, rows):
-    included = {row["id"] for row in rows}
+    included = {row["id"]: row["pre_vc"] for row in rows}
     return json.dumps({
         **run,
-        "candidates": [row for row in run.get("candidates", run["shortlist"]) if row["id"] in included],
-        "shortlist": [row for row in run["shortlist"] if row["id"] in included],
+        "presentation_ids": [r["id"] for r in rows if r["pre_vc"]["status"] == "present"],
+        "candidates": [{**row, "pre_vc": included[row["id"]]} for row in run.get("candidates", run["shortlist"]) if row["id"] in included],
+        "shortlist": [{**row, "pre_vc": included[row["id"]]} for row in run["shortlist"] if row["id"] in included],
         "manual_review": [key for key in run.get("manual_review", []) if key in included],
     }, ensure_ascii=False, indent=2)
 
@@ -107,7 +109,7 @@ def export_csv(rows):
         values = {key: row.get(key, "") for key in CSV_FIELDS}
         for column, key in (("source_urls", "sources"), ("founder_evidence", "founders"),
                             ("timeline", "timeline"), ("claims", "claims"), ("funding_review", "funding"),
-                            ("founder_venture_fit", "founder_venture_fit")):
+                            ("founder_venture_fit", "founder_venture_fit"), ("pre_vc", "pre_vc")):
             values[column] = json.dumps(row.get(key), ensure_ascii=False)
         for key, value in values.items():
             if isinstance(value, str) and value.lstrip().startswith(("=", "+", "-", "@")):

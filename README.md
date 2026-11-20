@@ -15,7 +15,7 @@ python -m pip install -r requirements.txt
 python -m streamlit run app.py
 ```
 
-Choose **Live discovery**, select sources, and click **Run sourcing engine**. The lookback controls Show HN. TUM and TU Berlin use their current public directories, and GitHub uses its bounded search windows. Start with the shortlist, or turn off the shortlist filter to inspect excluded and lower-confidence candidates. The table and dossier show funding status, original sources, score components, evidence confidence and dated traces. The dossier distinguishes the age of the earliest public trace from the unknown company age. JSON exports keep the shared contract. CSV exports include the screening fields and JSON-encoded source URLs, founder evidence, claims, timeline, and funding review. The additional CSV columns are additive.
+Choose **Live discovery**, select sources, and click **Run sourcing engine**. The lookback controls Show HN. TUM and TU Berlin use their current public directories, and GitHub uses its bounded search windows. The default presentation shows projects that pass the pre-VC review below. Enable **Include research leads awaiting verification** to inspect the research queue. The table and dossier show funding status, original sources, score components, evidence confidence and dated traces. The dossier distinguishes the age of the earliest public trace from the unknown company age. JSON exports keep the shared contract. CSV exports include the screening fields and JSON-encoded source URLs, founder evidence, claims, timeline, and funding review. The additional CSV columns are additive.
 
 **Verified research snapshot** loads the original manually researched examples for Simra AI, TerraTask and Jouly. The UI and exports label this mode. The independently captured PR #3 shortlist is in `research/founder-shortlist.json`.
 
@@ -43,7 +43,7 @@ For the demo, run a live scan, open a lead's evidence and timeline, and explain 
 
 ## Founder–Venture Fit
 
-The queue and shortlist still use the original six-part Founder Emergence calculation, now displayed as **Early Signal Score**. New runs include the additive alias `early_signal_score` and a separate `founder_venture_fit` object on each candidate. Both travel with the JSON and CSV exports. Archived JSON is exported as originally recorded. The dashboard can evaluate its available evidence using the archived run date.
+The queue and shortlist still use the original six-part Founder Emergence calculation, now displayed as **Early Signal Score**. New runs include the additive alias `early_signal_score` and a separate `founder_venture_fit` object on each candidate. Both travel with the JSON and CSV exports. Exports retain archived candidate facts and add the current pre-VC review. The dashboard can evaluate its available evidence using the archived run date.
 
 **Reading the assessment.** Both axes measure documented strengths on a 100-point rubric. Founder budgets are domain expertise 20, relevant achievements 15, technology built 20, operating or entrepreneurial experience 20, complementary capabilities 10 and research contributions 15. Venture budgets are problem significance 15, differentiation 15, market opportunity 15, feasibility 20, commercial path 15 and customer validation 20. A student's delivered technology or research can qualify on exactly the same terms as an experienced operator's. A university, employer, academic title, founder name or GitHub star count alone earns zero points.
 
@@ -67,7 +67,7 @@ The budgets and thresholds are hackathon diligence heuristics. They have no cali
 
 ## Secondary-school project watchlist
 
-Open **Student projects** in the Streamlit sidebar. The initial view loads five reviewed dossiers offline: AeroOne, Heuwind Lagertechnik, Moore UB, LIPIGO and GlioScope. Each gives the school country, source-linked evidence and one follow-up question. Use **Check public school and event sources** for fresh listings, then disable **Reviewed dossiers only** to inspect newly discovered teams. JSON export includes the full watchlist and source diagnostics.
+Open **Student projects** in the Streamlit sidebar. Enable **Include research projects awaiting verification** to see five offline research dossiers: AeroOne, Heuwind Lagertechnik, Moore UB, LIPIGO and GlioScope. Each gives the school country, source-linked evidence and one follow-up question. Use **Check public school and event sources** for fresh listings, then disable **Reviewed dossiers only** to inspect newly discovered teams. The dashboard export includes displayed projects and source diagnostics. The CLI exports the full research watchlist.
 
 ~~~sh
 python founder_sourcing.py --student-watchlist --snapshot
@@ -80,3 +80,13 @@ A live run reads five public sources: the Baden-Württemberg regional student-co
 Run again with a previous live export to identify newly listed projects or follow-up articles. The first run sets the baseline. Earlier observations retain their last-seen dates during source failures. The dashboard compares successive refreshes in the current session. The CLI can run under an existing scheduler. Exit status is nonzero if every live source fails, and reviewed dossiers are still exported.
 
 Reviewed evidence distinguishes awards, competition listings, pitches, source-reported customer work and scheduled events. Live listings are research observations, with first/last observation timestamps separate from published dates. An award or new article never assigns commercial traction, investment eligibility, or a score. Dated school announcements can precede public awards: for Heuwind the dossier includes the school's March Berlin pitch report and July coverage of the national win.
+
+## Investor presentation
+
+The investor view requires three dated, cited facts. The stage evidence must document prelaunch, a first prototype, first pilot or first customers of the venture within 180 days. The founder or company must explicitly report that no VC has invested to date, in a statement issued within 90 days. A reviewer must then check an independent financing source within 30 days, including a search for disclosed investment. These are configurable-in-code editorial defaults for this demo. Private transactions can be undisclosed.
+
+A recent repo, event prize or new feature at an established business cannot establish stage. A grant, equity-free prize or bootstrapping at launch alone cannot establish today's investor history. Confirm any SAFE, convertible or equity investment by a fund. A known round, later stage or company over three years old excludes a project; ambiguous financing and unresolved flags keep it in research.
+
+Add reviewed facts to `research/pre_vc_reviews.json`, keyed by the exact project ID and its existing `identity_url`. Each fact has a full ISO `date`, public `url` and evidence `summary`. Supply a `stage.kind` of `prelaunch`, `first_prototype`, `first_pilot` or `first_customers`. Supply a `declaration` with `issuer` equal to `founder` or `company` and `kind` equal to `no_prior_vc`. For `cross_check`, record the search scope, reviewer date and independent source with `independent: true` and `kind: no_public_vc_found`. Record contrary findings as `prior_vc` or `later_stage`. Keep adverse evidence during future updates.
+
+CLI JSON exposes `presentation_ids` separately from the discovery shortlist or watchlist. Each dossier's `pre_vc` field records the decision, evidence, date and remaining gaps. Dashboard views reassess freshness on rerun. A zero-length investor list is a valid result.
