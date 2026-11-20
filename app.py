@@ -6,6 +6,8 @@ import streamlit as st
 from dashboard_data import dashboard_rows, export_csv, export_json, load_demo_run
 from discovery_pipeline import run_discovery
 from emergence import DISCOVERY_SOURCES
+from fit_panel import render_fit
+from founder_fit import AGE_LABELS
 
 LIVE_MODE = "Live discovery"
 SNAPSHOT_MODE = "Verified research snapshot"
@@ -30,7 +32,7 @@ with st.sidebar:
                              disabled=mode != LIVE_MODE)
     days = st.slider("Show HN lookback window (days)", 30, 365, 365, step=5,
                      disabled=mode != LIVE_MODE)
-    minimum = st.slider("Minimum review score", 0, 100, 0, step=5)
+    minimum = st.slider("Minimum Early Signal Score", 0, 100, 0, step=5)
     run_clicked = st.button("Run sourcing engine", type="primary", use_container_width=True,
                             disabled=mode == LIVE_MODE and not sources)
     st.divider()
@@ -81,7 +83,10 @@ else:
         d.metric("Evidence links", len({url for row in leads for url in row["sources"]}))
         st.subheader("Evidence-ranked opportunity queue")
         st.dataframe([
-            {"Score /100": row["score"], "Project": row["name"], "Sector": row["sector"],
+            {"Early Signal /100": row["score"], "Project": row["name"], "Sector": row["sector"],
+             "Founder Potential /100": row["founder_venture_fit"]["founder"]["score"],
+             "Venture Potential /100": row["founder_venture_fit"]["venture"]["score"],
+             "Three-year eligibility": AGE_LABELS[row["founder_venture_fit"]["three_year_eligibility"]["status"]],
              "Location": row["location"], "Origin": row["origin"], "Team review": row["lead_status"],
              "Funding": row["funding_label"], "Earliest public signal": row["earliest_public_date"],
              "Evidence confidence /10": row["evidence_confidence"]}
@@ -98,6 +103,7 @@ else:
         st.write(f'**Investment sector:** {item["sector"]}  |  **Location:** {item["location"]}')
         location = item["location_evidence"]
         st.caption(f'Location confidence · {location.get("confidence", "unknown")}')
+        render_fit(item["founder_venture_fit"])
         left, right = st.columns([3, 2])
         with left:
             st.subheader("Founders and team")
@@ -121,7 +127,8 @@ else:
 
             st.subheader("Evidence timeline")
             st.caption(item["public_trace_age"])
-            st.caption("Company age is unverified. The timeline measures public evidence.")
+            if item["founder_venture_fit"]["three_year_eligibility"]["status"] == "unknown":
+                st.caption("Company age is unverified. The timeline measures public evidence.")
             for event in item.get("timeline", []):
                 qualifier = " · public visibility unverified" if event.get("public_signal") is False else ""
                 st.text(f'{event["date"]} · {event["label"]}{qualifier}')
@@ -135,7 +142,8 @@ else:
                     st.link_button(url, url)
 
         with right:
-            st.subheader("Why it was ranked here")
+            st.subheader("Early Signal Score")
+            st.write(f'{item["score"]}/100 · public emergence signals')
             st.json(item["score_components"], expanded=True)
             st.caption(f'Evidence confidence · {item["evidence_confidence"]}/10')
             st.subheader("Funding review")
@@ -183,7 +191,7 @@ with st.expander("Scouting methodology · limitations · HTGF fit"):
 Evidence can include named teams, old public traces, applied research, public grant support and
 commercialization cues. Source URLs and verification states accompany the signals.
 
-**Scoring** — Founder Emergence combines team, technical, commercial, market, timing and evidence
+**Scoring** — Early Signal Score (formerly Founder Emergence) combines team, technical, commercial, market, timing and evidence
 signals. Eligibility is evaluated separately. Confirm company fit, IP ownership, customer demand
 and funding with human diligence before outreach.
 """)

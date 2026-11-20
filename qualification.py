@@ -252,4 +252,9 @@ def qualify(records, release_events=(), search_review=None):
         scores=dimensions, score=sum(dimensions.values()), score_breakdown=dimensions,
     )
     lead["linkedin"] = {**lead["linkedin"], "public_links": list(dict.fromkeys(linkedin))}
+    if len(records) > 1:
+        lead["source_record_urls"] = list(dict.fromkeys(sources))
+    observations = [item for record in records for item in record.get("fit_evidence", [])]
+    if observations:
+        lead["fit_evidence"] = observations
     return lead
