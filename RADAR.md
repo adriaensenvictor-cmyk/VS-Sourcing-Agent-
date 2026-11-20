@@ -18,3 +18,29 @@ The JSON remains an array with the legacy lead fields. Use **funding.status** fo
 Use `--source-json university.json` to import additional university or GitHub discovery records. Supply an array of records with `id`, `title`, `source_url`, and `evidence` entries containing `signal` and `excerpt`. Optional fields include `source`, `project_url`, `published_at`, `links.github`, and `links.linkedin`. Prefer linking the full GitHub repository URL or the exact project homepage.
 
 For a live funding search, set `BRAVE_SEARCH_API_KEY` and run `python3 radar.py --search-funding --json`. Public search hits require review and are returned as leads for verification. Coverage is limited to public search results. LinkedIn links come from public sources and indexed pages reviewed during sourcing. The script makes no LinkedIn requests.
+
+## Optional AI investment analysis
+
+The optional evaluator uses the existing candidate JSON and writes a separate AI report. It does not change the radar candidate schema or scrape LinkedIn.
+
+On Windows PowerShell, from the repository folder:
+
+~~~powershell
+$env:OPENAI_API_KEY = Read-Host "OpenAI API key"
+python radar.py --json --limit 1 | python ai_score.py - --output ai_evaluations.json
+~~~
+
+The key remains in the current PowerShell session; do not add it to a file or commit it. The evaluation calls the OpenAI Responses API and uses Structured Outputs. A default model can be changed with OPENAI_MODEL.
+
+To compare against a fund profile, pass a JSON object containing the fund's known geography, sectors, stage, and exclusions:
+
+~~~powershell
+python ai_score.py candidates.json --investor-profile investor-profile.json --output ai_evaluations.json
+~~~
+
+If no investor profile is supplied, investor_fit remains unassessed. The investment score uses these weights: founder/team 25, technical differentiation 20, market opportunity 20, commercialization signals 15, venture intent 10, and investor fit 10. Each dimension is scored 0–5 only when the model cites a source URL present in the candidate dossier. Missing dimensions are excluded from the weighted average and reported through score_coverage; no total score is returned below 60% coverage.
+
+The report separately includes early-stage confidence, evidence confidence, thesis, founder background relevance, positive signals, risks, missing information, Germany focus, and funding status. Funding is copied from the supplied qualification data. no_funding_found describes only the checked sources and never proves that a startup is unfunded. Responses are cached in a local SQLite file for seven days; use --no-cache to bypass the cache.
+
+The evaluator only analyzes evidence supplied by the discovery pipeline or a reviewer. LinkedIn profile links remain pointers for permitted human review; the workflow does not request or scrape LinkedIn.
+
