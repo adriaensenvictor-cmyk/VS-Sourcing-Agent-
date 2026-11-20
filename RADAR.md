@@ -21,7 +21,7 @@ For a live funding search, set `BRAVE_SEARCH_API_KEY` and run `python3 radar.py 
 
 ## Optional AI investment analysis
 
-The optional evaluator accepts the current First Trace JSON envelope, a candidate array, or a single candidate object. It writes a separate AI report and does not change the shared candidate schema or scrape LinkedIn. The example uses the current discovery engine and limits the run to one candidate to control API use.
+The optional evaluator accepts the current First Trace JSON envelope, a candidate array, or a single candidate object. It writes a separate AI report and does not change the shared candidate schema or scrape LinkedIn. The example uses the current discovery engine; the CLI evaluates only the first candidate by default to control API use. Pass `--all-candidates` to explicitly evaluate the full input, which may make many paid API calls.
 
 On Windows PowerShell, from the repository folder:
 
@@ -30,7 +30,7 @@ $env:OPENAI_API_KEY = Read-Host "OpenAI API key"
 python emergence.py --limit 1 --github-limit 0 | python ai_score.py - --output ai_evaluations.json
 ~~~
 
-The key remains in the current PowerShell session; do not add it to a file or commit it. The evaluation calls the OpenAI Responses API and uses Structured Outputs. A default model can be changed with OPENAI_MODEL.
+The key remains in the current PowerShell session; do not add it to a file or commit it. The evaluation calls the OpenAI Responses API and uses Structured Outputs. It defaults to `gpt-5.4-mini`; set `OPENAI_MODEL` to use another supported model.
 
 To compare against a fund profile, pass a JSON object containing the fund's known geography, sectors, stage, and exclusions:
 
