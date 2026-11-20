@@ -10,6 +10,7 @@ from datetime import date, datetime, timedelta, timezone
 from urllib.parse import urlencode, urlsplit
 from urllib.request import Request, urlopen
 
+from founder_fit import evaluate, review_priority
 from qualification import detect_intent, merge_candidates, url_key
 from sourcing import positive_int
 
@@ -303,14 +304,19 @@ def combine(rows):
 
 
 def rank_candidates(rows, limit, *, github_count=0, source_status=None, mode="live"):
+    generated_at = datetime.now(timezone.utc)
     candidates = [combine(group) for group in merge_candidates(rows)]
-    candidates.sort(key=lambda lead: (lead["location"]["country"] == "Germany",
-                                     lead["founder_emergence_score"]), reverse=True)
+    candidates.sort(
+        key=lambda lead: review_priority(lead["location"]["country"],
+                                         evaluate([lead], generated_at.date())["score"],
+                                         lead["founder_emergence_score"]),
+        reverse=True,
+    )
     shortlist = [lead for lead in candidates if not lead["shortlist_exclusions"]][:min(10, limit)]
     return {
         "schema_version": 1,
         "mode": mode,
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": generated_at.isoformat(),
         "source_status": source_status or {},
         "github_repositories_reviewed": github_count,
         "shortlist": shortlist,

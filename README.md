@@ -28,7 +28,10 @@ The desk stores its own workflow state. Run `python scout_inbox.py` to refresh i
 See the [competitive review, demo sequence, and n8n runbook](research/scout-workflow.md).
 The dossier uses the reviewed, deterministic founder–venture fit and legal registration evidence
 from [Victor's PR #6](https://github.com/adriaensenvictor-cmyk/VS-Sourcing-Agent-/pull/6).
-Those checks inform diligence and age filtering. The discovery engine still supplies the queue order.
+The evaluation uses 60 points for the team and 40 for the project, based on documented evidence.
+The score is provisional while some criteria remain open. A missing axis or conflicting evidence
+leaves the overall grade pending. Germany comes first, then the evaluation score, with early
+signals breaking ties or ordering pending candidates. The same eligibility rules govern shortlisting.
 
 Live discovery also reads UnternehmerTUM Incubator, imec.istart and the BayStartUP
 2026 competition roster. Open **All locations** to review records that lack location
@@ -51,7 +54,7 @@ Optional environment variables for GitHub API quota are `FOUNDER_RADAR_GITHUB_TO
 1. TUM Venture Labs and Show HN use the existing main-branch collectors. TU Berlin adapts the public venture directory and carries through published team and grant evidence. GitHub searches recent repositories and samples linked commit and release metadata.
 2. Qualification carries source URLs, founder evidence, claims, dated events and public funding reviews. Identity uses declared project URLs or specific GitHub repositories. GitHub profile location does not establish startup location. A directory cohort year is not an incorporation date.
 3. The Founder Emergence score weighs technical execution, founding team, commercialization, early-stage signals, market evidence and evidence quality. Shortlist eligibility is evaluated separately, with funded and later-stage companies excluded. A public grant is tracked separately from an equity round. `no_funding_found` identifies a scoped review, and `unknown` calls for diligence.
-4. The shared JSON envelope provides `schema_version`, `mode`, `generated_at`, `source_status`, `candidates`, `shortlist` and `manual_review`. Dashboard labels derive from this record without reranking. The older radar JSON array remains available. See [RADAR.md](RADAR.md).
+4. The shared JSON envelope provides `schema_version`, `mode`, `generated_at`, `source_status`, `candidates`, `shortlist` and `manual_review`. The dashboard applies the same evaluation order to stored runs. The CSV includes the new evaluation alongside the original signal score. The older radar JSON array remains available. See [RADAR.md](RADAR.md).
 
 Source failures are reported independently. Public directories, repository samples and funding reviews have limited coverage. The TUM autonomous-trucks announcement is a reviewed public reference, and its EXIST application does not establish a grant award. Comparing lead time against other databases requires a dated baseline. Founder Emergence scores prioritize review and do not estimate investment returns. Verify public evidence before outreach.
 

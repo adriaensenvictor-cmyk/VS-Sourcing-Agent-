@@ -5,6 +5,7 @@ from urllib.parse import urlsplit
 
 import streamlit as st
 
+from founder_fit import FOUNDER_WEIGHT, VENTURE_WEIGHT, weighted_points
 from founder_signals import track_record
 from profile_evidence import profile_for, SOURCE_GUIDE
 from scout_filters import formation_record, funding_stage
@@ -80,7 +81,10 @@ def render_dossier(item, store, saved, notices):
     description = item.get("description") or "Description unavailable."
     st.text(description[:550] + ("…" if len(description) > 550 else ""))
     a, b = st.columns([1, 2])
-    a.metric("Early signal score", f'{item["score"]}/100')
+    fit = item["founder_venture_fit"]
+    grade = fit["score"]
+    a.metric("Evaluation score", f"{grade}/100" if grade is not None else "Pending")
+    a.caption(fit["coverage"])
     b.caption("Funding assessment")
     b.write(item["funding_label"])
     if (stage := reported_stage(item)) not in ("Unverified", "Round reported · stage unclear"):
@@ -177,18 +181,19 @@ def render_dossier(item, store, saved, notices):
         st.download_button("Download sourced call brief", outline, "firsttrace-call-brief.md", "text/markdown")
         render_brief({**item, "evidence": evidence})
     with scoring:
-        fit = item["founder_venture_fit"]
-        st.subheader("Founder–venture fit")
+        st.subheader("Team and project evaluation")
         st.write(fit["assessment"])
         st.caption(fit["coverage"])
-        for column, (key, label) in zip(st.columns(2), (("founder", "Founder potential"), ("venture", "Venture potential"))):
+        axes = (("founder", "Team", FOUNDER_WEIGHT), ("venture", "Project", VENTURE_WEIGHT))
+        for column, (key, label, weight) in zip(st.columns(2), axes):
             axis = fit[key]
-            score = axis["score"]
-            column.metric(label, "Unknown" if score is None else f"{score}/100")
-            for marker, fields in (("Verify", axis["missing"]), ("Conflicting", axis["conflicts"])):
+            points = weighted_points(axis, weight)
+            column.metric(label, "Unknown" if points is None else f"{points:g}/{weight}")
+            for marker, fields in (("Documented", axis["strengths"]), ("Verify", axis["missing"]),
+                                   ("Limits", axis["limitations"]), ("Conflicting", axis["conflicts"])):
                 if fields:
                     column.caption(marker + " · " + ", ".join(field.replace("_", " ") for field in fields))
-        with st.expander("Early signal score breakdown"):
+        with st.expander(f'Early signal score · {item["score"]}/100'):
             st.json(item["score_components"], expanded=True)
         st.caption(f'Evidence confidence · {item["evidence_confidence"]}/10')
         for check in item["funding"]["reviews"]:

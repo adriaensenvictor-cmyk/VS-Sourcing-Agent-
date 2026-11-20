@@ -11,6 +11,8 @@ FOUNDER = {"domain_expertise": 20, "relevant_achievement": 15, "built_technology
            "operating_experience": 20, "complementary_team": 10, "research_contribution": 15}
 VENTURE = {"problem_significance": 15, "differentiation": 15, "market_opportunity": 15,
            "technical_feasibility": 20, "commercial_path": 15, "customer_validation": 20}
+FOUNDER_WEIGHT = 60
+VENTURE_WEIGHT = 40
 FORMATION = {"legal_formation", "unincorporated"}
 CLAIMS = {"domain_experience": "domain_expertise", "prototype": "technical_feasibility", "launch": "commercial_path",
           "commercialization": "commercial_path", "pilot": "customer_validation",
@@ -36,7 +38,8 @@ def public_url(value):
 def collect_evidence(records, as_of):
     observations = []
     for record in records:
-        urls = [record.get("source_url"), *record.get("source_record_urls", [])]
+        urls = [record.get("source_url"), *record.get("source_record_urls", []),
+                *record.get("sources", [])]
         for url in dict.fromkeys(filter(None, urls)):
             review = reviewed_sources().get(url.rstrip("/"))
             if review and review["reviewed_on"] <= as_of.isoformat():
@@ -97,21 +100,27 @@ def axis(budget, facts):
             "assessed": len(strengths) + len(limitations), "total": len(budget)}
 
 
+def weighted_points(axis_result, weight):
+    score = axis_result["score"]
+    return None if score is None else round(score * weight / 100, 1)
+
+
 def assessment(founder, venture):
-    f, v = founder["score"], venture["score"]
     if founder["conflicts"] or venture["conflicts"]:
         return None, "Conflicting evidence · manual review"
-    if f is not None and v is not None and min(f, v) >= 70:
-        return min(100, max(f, v) + 10), "Strong on both dimensions"
-    if f is not None and f >= 70:
-        return f, "Founder-led opportunity · validate the venture"
-    if v is not None and v >= 70:
-        return v, "Venture-led opportunity · validate the team"
-    if min(founder["assessed"], venture["assessed"]) < 3:
-        return None, "Insufficient evidence"
-    if max(f, v) <= 35:
-        return min(f, v), "Low priority on reviewed evidence"
-    return min(f, v), "Developing fit · investigate the weaker dimension"
+    team_points = weighted_points(founder, FOUNDER_WEIGHT)
+    project_points = weighted_points(venture, VENTURE_WEIGHT)
+    if team_points is None or project_points is None:
+        return None, "Evidence needed on both dimensions"
+    score = round(team_points + project_points)
+    if any(part["missing"] for part in (founder, venture)):
+        return score, "Provisional · based on documented strengths"
+    return score, "All criteria reviewed"
+
+
+def review_priority(country, grade, early_signal):
+    """Keep Germany first, then rank evidenced grades before pending assessments."""
+    return (country == "Germany", grade is not None, grade if grade is not None else 0, early_signal)
 
 
 def three_years(facts, as_of, university):

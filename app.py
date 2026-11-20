@@ -139,7 +139,8 @@ with st.expander("Funding, sector and review filters"):
     stages = st.multiselect("Reported funding stage", stage_options, key="stages")
     founder_filter = st.selectbox("Founder history", ["Any background", "Previous employer", "Previous startup"],
                                   key="founder_history_filter")
-    minimum = st.slider("Minimum review score", 0, 100, step=1, key="review_score")
+    minimum = st.slider("Minimum evaluation score", 0, 100, step=1, key="review_score",
+                        help="Scores use 60 points for the team and 40 for the project. At zero, pending assessments stay visible.")
 
 decisions = store.decisions(outcome["mode"])
 rows = dashboard_rows(outcome, shortlist_only=shortlist_only and not saved_only)
@@ -149,7 +150,10 @@ leads = []
 for item in rows:
     profile = profile_for(item)
     country = profile.get("country") or item["location"]
-    if not region_matches(location_region({"country": country}), region) or item["score"] < minimum:
+    if not region_matches(location_region({"country": country}), region):
+        continue
+    evaluation = item["founder_venture_fit"]["score"]
+    if minimum and (evaluation is None or evaluation < minimum):
         continue
     if (limits and item["funding_label"] not in limits) or (stages and reported_stage(item) not in stages):
         continue
@@ -185,7 +189,9 @@ with queue:
         with st.container(border=True):
             st.text(row["name"])
             label = decisions.get(row["id"], {}).get("decision") or row["lead_status"]
-            st.caption(f'{row["score"]}/100 · {label} · {row["earliest_public_date"] or "Trace date unknown"}')
+            grade = row["founder_venture_fit"]["score"]
+            score_label = f"{grade}/100" if grade is not None else "Assessment pending"
+            st.caption(f'{score_label} · {label} · {row["earliest_public_date"] or "Trace date unknown"}')
             st.caption(row["funding_label"])
     with st.expander("Export screening queue"):
         st.download_button("Export lead dossiers (JSON)", data=export_json(outcome, leads),
