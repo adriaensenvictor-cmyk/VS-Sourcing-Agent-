@@ -39,7 +39,7 @@ class IntegrationTests(unittest.TestCase):
     def test_exports_keep_filtered_funding_and_canonical_json(self):
         row = dashboard_rows(self.run)[0]
         payload = json.loads(export_json(self.run, [row]))
-        self.assertEqual(payload["shortlist"], self.run["shortlist"][:1])
+        self.assertEqual(payload["shortlist"], [{**self.run["shortlist"][0], "pre_vc": row["pre_vc"]}])
         self.assertEqual(payload["candidates"][0]["location"]["country"], "Germany")
         self.assertEqual(payload["manual_review"], [row["id"]])
         table = list(csv.DictReader(io.StringIO(export_csv([row]))))
@@ -109,6 +109,8 @@ class IntegrationTests(unittest.TestCase):
             app.sidebar.button[0].click().run()
             run.assert_called_once()
         self.assertFalse(app.exception)
+        self.assertFalse(app.metric)
+        app.toggle[0].set_value(True).run()
         self.assertEqual(app.metric[0].value, "3")
         self.assertIn("Rapid Resilience", [heading.value for heading in app.header])
         self.assertTrue(any("Within three years" in entry.value for entry in app.markdown))

@@ -6,6 +6,7 @@ import streamlit as st
 from dashboard_data import dashboard_rows, export_csv, export_json, load_demo_run
 from discovery_pipeline import run_discovery
 from emergence import DISCOVERY_SOURCES
+from pre_vc_panel import show_review
 from fit_panel import render_fit
 from founder_fit import AGE_LABELS
 
@@ -68,12 +69,16 @@ else:
         elif status["state"] == "partial":
             st.warning(f"{name} · Partial coverage. {detail}")
 
-    shortlist_only = st.toggle("Show shortlisted only", value=not is_snapshot,
+    show_research = st.toggle("Include research leads awaiting verification", value=False)
+    shortlist_only = show_research and st.toggle("Show shortlisted only", value=not is_snapshot,
                                key=f'shortlist_{outcome["mode"]}')
     leads = [row for row in dashboard_rows(outcome, shortlist_only=shortlist_only)
-             if row["score"] >= minimum]
+             if row["score"] >= minimum and (show_research or row["pre_vc"]["status"] == "present")]
     if not leads:
-        st.warning("No leads match the current filters. You can widen the score range or include additional candidates.")
+        if not show_research:
+            st.info("No projects match this presentation view. Early-stage evidence, a recent team statement on prior VC and an independent funding check are required.")
+        else:
+            st.warning("No leads match the current filters. You can widen the score range or include additional candidates.")
 
     if leads:
         a, b, c, d = st.columns(4)
@@ -103,6 +108,7 @@ else:
         st.write(f'**Investment sector:** {item["sector"]}  |  **Location:** {item["location"]}')
         location = item["location_evidence"]
         st.caption(f'Location confidence · {location.get("confidence", "unknown")}')
+        show_review(item["pre_vc"])
         render_fit(item["founder_venture_fit"])
         left, right = st.columns([3, 2])
         with left:

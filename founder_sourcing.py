@@ -10,6 +10,7 @@ from urllib.request import Request, urlopen
 
 from qualification import detect_intent, url_key
 from sourcing import positive_int
+from pre_vc import annotate
 
 SOURCE = "European launches & alumni (Show HN)"
 EMPLOYERS = ("Goldman Sachs", "Jane Street", "Citadel Securities", "Citadel", "OpenAI", "Anthropic")
@@ -200,7 +201,9 @@ def main():
         rows = []
         status = "error"
         warnings.append("Show HN searches unavailable.")
-    print(json.dumps({"source": SOURCE, "status": status, "generated_at": datetime.now(timezone.utc).isoformat(),
+    rows = annotate(rows)
+    print(json.dumps({"presentation_ids": [r["id"] for r in rows if r["pre_vc"]["status"] == "present"],
+                      "source": SOURCE, "status": status, "generated_at": datetime.now(timezone.utc).isoformat(),
                       "warnings": list(dict.fromkeys(warnings)), "research_candidates": rows},
                      indent=2, ensure_ascii=False))
     return int(status == "error")

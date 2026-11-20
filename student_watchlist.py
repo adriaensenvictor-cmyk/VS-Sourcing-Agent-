@@ -7,6 +7,8 @@ from pathlib import Path
 from urllib.parse import urljoin, urlsplit
 from xml.etree import ElementTree
 
+from pre_vc import annotate
+
 import requests
 from bs4 import BeautifulSoup
 
@@ -175,7 +177,9 @@ def refresh(*, live=False, previous=None, fetcher=fetch):
     status = "snapshot"
     if live:
         status = "ok" if successful == len(SOURCES) else ("partial" if successful else "error")
-    return {"module": "student_watchlist", "mode": "live" if live else "research_snapshot",
+    projects = annotate(rows.values())
+    return {"presentation_ids": [p["id"] for p in projects if p["pre_vc"]["status"] == "present"],
+            "module": "student_watchlist", "mode": "live" if live else "research_snapshot",
             "generated_at": stamp, "status": status, "sources": sources, "changes": changes,
-            "student_watchlist": sorted(rows.values(), key=lambda p: (p["school_country"] != "Germany",
+            "student_watchlist": sorted(projects, key=lambda p: (p["school_country"] != "Germany",
                                        p["provenance"] != "reviewed", p["name"].casefold()))}
