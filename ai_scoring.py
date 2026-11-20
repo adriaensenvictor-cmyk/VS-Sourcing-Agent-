@@ -17,7 +17,7 @@ from urllib.request import Request, urlopen
 
 API_URL = "https://api.openai.com/v1/responses"
 PROMPT_VERSION = "first-trace-ai-evaluation-v1"
-DEFAULT_MODEL = "gpt-4.1-mini"
+DEFAULT_MODEL = "gpt-5.4-mini"
 MIN_SCORE_COVERAGE = 60
 MAX_INPUT_CHARS = 120_000
 
