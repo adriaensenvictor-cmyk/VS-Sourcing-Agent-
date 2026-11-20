@@ -219,7 +219,7 @@ def _candidate_urls(value):
                 visit(child)
         elif isinstance(item, str):
             for match in pattern.findall(item):
-                urls.add(match.rstrip(".,;:!?)\]}"))
+                urls.add(match.rstrip(".,;:!?)]}"))
     visit(value)
     return urls
 
