@@ -1,0 +1,53 @@
+[
+  {
+    "id": "student:aeroone", "name": "AeroOne", "school_country": "Germany",
+    "description": "A Gütersloh school team offering drone photography for property and construction firms.",
+    "review_question": "Have customers ordered again, and can another operator deliver at the same quality and margin?",
+    "signals": [
+      {"date": "2026-06-08", "kind": "customer_report", "basis": "local_reporting", "text": "Radio Gütersloh reported first customers for the student team's drone service.", "url": "https://www.radioguetersloh.de/nachrichten/kreis-guetersloh/schuelerfirma-aus-guetersloh-zieht-erste-kunden-an-land.html"},
+      {"date": "2026-06-16", "kind": "award", "basis": "organizer", "text": "The team won the national IW JUNIOR student-company competition.", "url": "https://www.mynewsdesk.com/de/iw-junior/pressreleases/aeroone-vom-evangelisch-stiftischen-gymnasium-aus-guetersloh-holt-sich-den-titel-beste-schuelerfirma-2026-3454598"},
+      {"date": null, "kind": "customer_report", "basis": "team_self_report", "text": "The team reports five completed projects in spring 2026, including work for Kaup and Concept GT. Revenue and repeat orders require verification.", "url": "https://www.aeroone.eu/ueber-uns"}
+    ]
+  },
+  {
+    "id": "student:heuwind", "name": "Heuwind Lagertechnik", "school_country": "Germany",
+    "profile_url": "https://www.jugend-gruendet.de/finale-2026/heuwind",
+    "description": "A Bruchsal student designed a recycled-plastic support for storing hay bales.",
+    "review_question": "Has a farm compared storage losses with ordinary pallets through a complete season?",
+    "signals": [
+      {"date": "2026-03-27", "kind": "pitch", "basis": "school_report", "text": "The school reported that the project won the March 24–25 Berlin pitch event and qualified for the national final.", "url": "https://www.handelslehranstalt-bruchsal.de/2026/03/27/erfolg-beim-pitch-event-von-jugend-gruendet-leonie-dohn-erreicht-bundesfinale/"},
+      {"date": "2026-07-03", "kind": "award", "basis": "regional_reporting", "text": "Start-up BW reported the national JUGEND GRÜNDET win.", "url": "https://www.startupbw.de/news-detail/schulteams-aus-the-laend-raeumen-beim-bundesfinale-jugend-gruendet-2026-ab"}
+    ]
+  },
+  {
+    "id": "student:moore", "name": "Moore UB", "school_country": "Norway",
+    "profile_url": "https://expo.gen-e.eu/expo/361b1462-643d-42b0-85e0-468957d1dfc4",
+    "description": "A Trondheim upper-secondary team developed a tracking strip for maritime rope.",
+    "review_question": "Has a rope maker integrated the strip into production and tested legibility after wear at sea?",
+    "signals": [
+      {"date": "2026-07", "kind": "award", "basis": "organizer", "text": "Norway's organizer reported two awards at the Gen-E event held July 7–9 in Riga and described the strip integrated into the rope core.", "url": "https://www.ue.no/nyheter/norsk-gull-i-europa-moore-ub-vant-to-prestisjepriser/"},
+      {"date": null, "kind": "project_description", "basis": "organizer", "text": "Gen-E describes the team's digital rope-identification approach.", "url": "https://2026.gen-e.eu/moore-ub-will-be-representing-ja-norway-at-gen-e-2026/"}
+    ]
+  },
+  {
+    "id": "student:lipigo", "name": "LIPIGO", "school_country": "Slovakia",
+    "profile_url": "https://expo.gen-e.eu/expo/17902a16-ee88-45f2-be00-bc43b314858f",
+    "description": "A Košice grammar-school team developed washable children's glue made from edible ingredients.",
+    "review_question": "Has the team secured a retail trial, repeat order or distribution agreement?",
+    "signals": [
+      {"date": "2026-05-04", "kind": "award", "basis": "organizer", "text": "Gen-E announced the Slovak national student-company win.", "url": "https://gen-e.eu/2026/news/lipigo-is-the-national-winner-of-ja-slovakia-2026"},
+      {"date": "2026-07", "kind": "award", "basis": "organizer", "text": "JA Europe lists LIPIGO first in its upper-secondary Company of the Year category.", "url": "https://gen-e.eu/2026/awards"},
+      {"date": "2026-11-08", "kind": "finalist_selection", "basis": "school_report", "text": "The school reported selection among nine finalists for Startup Awards Slovakia.", "url": "https://www.gympos.sk/novinky/2026/lipigo-medzi-top-9-startupmi-slovenska"},
+      {"date": "2026-11-08", "scheduled_for": "2026-11-25", "kind": "scheduled_event", "basis": "school_report", "text": "The school announced an upcoming final in Bratislava. Its outcome requires a separate source.", "url": "https://www.gympos.sk/novinky/2026/lipigo-medzi-top-9-startupmi-slovenska"}
+    ]
+  },
+  {
+    "id": "student:glioscope", "name": "GlioScope", "school_country": "Ireland",
+    "description": "A Kerry secondary-school student built an MRI-based research tool for profiling brain tumours.",
+    "review_question": "Has an independent clinical group evaluated the tool on an external dataset?",
+    "signals": [
+      {"date": "2026-01-19", "kind": "award", "basis": "organizer", "text": "The Irish exhibition published its student-project award and described the research tool.", "url": "https://www.yste.ie/2026/01/19/brain-cancer-diagnosis-tool-takes-top-prize-as-aoibheann-daly-wins-the-2026-stripe-young-scientist-and-technology-exhibition/"},
+      {"date": "2026-09-28", "kind": "award", "basis": "news_report", "text": "RTÉ reported a core prize at the European Union Contest for Young Scientists. Clinical deployment remains unverified.", "url": "https://www.rte.ie/news/business/2026/0928/1593150-young-scientist/"}
+    ]
+  }
+]

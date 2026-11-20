@@ -64,3 +64,19 @@ The budgets and thresholds are hackathon diligence heuristics. They have no cali
 **Three-year review.** Supply an explicitly sourced `legal_formation` fact with an exact ISO date or a sourced `unincorporated` observation. The third calendar anniversary is included. Leap-day anniversaries use the last day of February. Missing, conflicting or future dates require verification. Grants, cohort years, repository timestamps and registration publication notices alone cannot establish founding. University candidates with unresolved legal age receive a separate review flag. Age and fit are advisory and leave the original shortlist intact.
 
 **Optional AI diligence.** Set `OPENAI_API_KEY` in the launch environment and click **Generate AI diligence assessment** in a dossier. The dashboard sends up to 30 cited public excerpts to OpenAI once per assessment per session. The model selects a diligence focus, an existing evidence ID and a follow-up question using strict JSON. The UI renders the original excerpt and URL separately. It accepts no generated biographies or numerical scores. Without credentials, on network failure or after a refusal, the deterministic assessment remains available.
+
+## Secondary-school project watchlist
+
+Open **Student projects** in the Streamlit sidebar. The initial view loads five reviewed dossiers offline: AeroOne, Heuwind Lagertechnik, Moore UB, LIPIGO and GlioScope. Each gives the school country, source-linked evidence and one follow-up question. Use **Check public school and event sources** for fresh listings, then disable **Reviewed dossiers only** to inspect newly discovered teams. JSON export includes the full watchlist and source diagnostics.
+
+~~~sh
+python founder_sourcing.py --student-watchlist --snapshot
+python founder_sourcing.py --student-watchlist > students-first.json
+python founder_sourcing.py --student-watchlist --previous students-first.json > students-next.json
+~~~
+
+A live run reads five public sources: the Baden-Württemberg regional student-company results, JUGEND GRÜNDET finalists, Gen-E upper-secondary awards, the Bruchsal school's Heuwind news feed, and the Košice school's news index for LIPIGO. Competition adapters cover the linked 2026 editions. Update the roster URLs and selectors for later editions. School news monitoring is bounded to those two schools; the Košice index shows its current page. German roster entries require identifiable secondary-school wording. School country describes affiliation; company headquarters, legal formation and equity funding require separate evidence.
+
+Run again with a previous live export to identify newly listed projects or follow-up articles. The first run sets the baseline. Earlier observations retain their last-seen dates during source failures. The dashboard compares successive refreshes in the current session. The CLI can run under an existing scheduler. Exit status is nonzero if every live source fails, and reviewed dossiers are still exported.
+
+Reviewed evidence distinguishes awards, competition listings, pitches, source-reported customer work and scheduled events. Live listings are research observations, with first/last observation timestamps separate from published dates. An award or new article never assigns commercial traction, investment eligibility, or a score. Dated school announcements can precede public awards: for Heuwind the dossier includes the school's March Berlin pitch report and July coverage of the national win.

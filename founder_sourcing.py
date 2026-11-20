@@ -168,7 +168,28 @@ def discover(warnings, days=365):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--days", type=positive_int, default=365)
+    parser.add_argument("--student-watchlist", action="store_true", help="Scan public secondary-school sources")
+    parser.add_argument("--snapshot", action="store_true", help="Load the five reviewed student projects offline")
+    parser.add_argument("--previous", help="Compare a live student scan with a previous JSON export")
     args = parser.parse_args()
+    if (args.snapshot or args.previous) and not args.student_watchlist:
+        parser.error("--snapshot and --previous require --student-watchlist")
+    if args.snapshot and args.previous:
+        parser.error("--previous requires a live scan")
+    if args.student_watchlist:
+        from student_watchlist import refresh
+        prior = None
+        if args.previous:
+            try:
+                with open(args.previous, encoding="utf-8") as previous_file:
+                    prior = json.load(previous_file)
+                if not isinstance(prior, dict) or prior.get("module") != "student_watchlist" or prior.get("mode") != "live":
+                    parser.error("--previous must be a live student watchlist export")
+            except (OSError, ValueError) as exc:
+                parser.error(str(exc))
+        result = refresh(live=not args.snapshot, previous=prior)
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+        return int(result["status"] == "error")
     warnings = []
     status = "ok"
     try:
