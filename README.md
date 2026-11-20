@@ -36,7 +36,7 @@ signals breaking ties or ordering pending candidates. The same eligibility rules
 Live discovery also reads UnternehmerTUM Incubator, imec.istart and the BayStartUP
 2026 competition roster. Open **All locations** to review records that lack location
 evidence. See [source coverage and founder signals](research/incubator-coverage.md)
-for limits and additional programmes.
+for limits and additional programmes. The [exact discovery and scoring rules](research/discovery-rules.md) are documented in French.
 
 ## Run the engine and tests
 
