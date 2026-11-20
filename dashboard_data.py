@@ -2,6 +2,7 @@
 import csv
 import io
 import json
+from datetime import date
 from pathlib import Path
 
 from discovery_pipeline import campus_record
@@ -16,12 +17,34 @@ FUNDING_LABELS = {
 }
 CSV_FIELDS = ("name", "sector", "location", "origin", "score", "evidence_confidence",
               "lead_status", "funding_status", "funding_label", "source_url", "project_url",
-              "earliest_public_date", "shortlisted", "mode")
+              "earliest_public_date", "shortlisted", "mode", "public_trace_age",
+              "source_urls", "founder_evidence", "timeline", "claims", "funding_review")
 
 
 def load_demo_run():
     rows = [campus_record(row) for row in load_research_snapshot(ROOT / "data/research_snapshot.json")]
     return rank_candidates(rows, limit=10, mode="research_snapshot")
+
+
+def public_trace_age(trace_date, run_date):
+    """Measure the age of a public trace using the run date as the reference."""
+    if not trace_date or not run_date:
+        return "No dated public trace"
+    if len(trace_date) == 4 and trace_date.isdecimal():
+        return f"Year-only evidence ({trace_date})"
+    try:
+        observed = date.fromisoformat(trace_date[:10])
+        as_of = date.fromisoformat(run_date[:10])
+    except ValueError:
+        return "Public trace age unavailable"
+    if observed > as_of:
+        return "Public trace age unavailable"
+    months = (as_of.year - observed.year) * 12 + as_of.month - observed.month
+    months -= as_of.day < observed.day
+    if not months:
+        return "Less than one month since earliest public trace"
+    unit = "month" if months == 1 else "months"
+    return f"{months} {unit} since earliest public trace"
 
 
 def dashboard_rows(run, *, shortlist_only=False):
@@ -50,6 +73,7 @@ def dashboard_rows(run, *, shortlist_only=False):
             "funding_label": FUNDING_LABELS.get(status, FUNDING_LABELS["unknown"]),
             "project_url": row.get("official_website") or row.get("github_url") or row.get("source_url"),
             "earliest_public_date": earliest.get("date"),
+            "public_trace_age": public_trace_age(earliest.get("date"), run.get("generated_at")),
             "shortlisted": is_shortlisted,
             "lead_status": "Shortlisted" if is_shortlisted else "Additional candidate",
             "mode": run.get("mode", "research_snapshot"),
@@ -73,6 +97,9 @@ def export_csv(rows):
     writer.writeheader()
     for row in rows:
         values = {key: row.get(key, "") for key in CSV_FIELDS}
+        for column, key in (("source_urls", "sources"), ("founder_evidence", "founders"),
+                            ("timeline", "timeline"), ("claims", "claims"), ("funding_review", "funding")):
+            values[column] = json.dumps(row.get(key), ensure_ascii=False)
         for key, value in values.items():
             if isinstance(value, str) and value.lstrip().startswith(("=", "+", "-", "@")):
                 values[key] = "'" + value

@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 from streamlit.testing.v1 import AppTest
 
-from dashboard_data import dashboard_rows, export_csv, export_json
+from dashboard_data import dashboard_rows, export_csv, export_json, public_trace_age
 from discovery_pipeline import campus_record, run_discovery, source_result
 from emergence import rank_candidates
 from engine import load_research_snapshot
@@ -45,8 +45,20 @@ class IntegrationTests(unittest.TestCase):
         table = list(csv.DictReader(io.StringIO(export_csv([row]))))
         self.assertEqual(table[0]["funding_status"], "no_funding_found")
         self.assertEqual(table[0]["earliest_public_date"], row["earliest_public_date"])
+        self.assertEqual(json.loads(table[0]["source_urls"]), row["sources"])
+        self.assertEqual(json.loads(table[0]["founder_evidence"]), row["founders"])
+        self.assertEqual(json.loads(table[0]["timeline"]), row["timeline"])
+        self.assertEqual(json.loads(table[0]["claims"]), row["claims"])
+        self.assertEqual(json.loads(table[0]["funding_review"]), row["funding"])
         guarded = list(csv.DictReader(io.StringIO(export_csv([{**row, "name": "=1+1"}]))))
         self.assertEqual(guarded[0]["name"], "'=1+1")
+
+    def test_public_trace_age_retains_date_precision(self):
+        self.assertEqual(public_trace_age("2025-07-16", "2026-11-20T14:00:00Z"),
+                         "16 months since earliest public trace")
+        self.assertEqual(public_trace_age("2025", "2026-11-20"), "Year-only evidence (2025)")
+        self.assertEqual(public_trace_age(None, "2026-11-20"), "No dated public trace")
+        self.assertEqual(public_trace_age("2027-01-01", "2026-11-20"), "Public trace age unavailable")
 
     def test_funded_candidate_is_visible_for_diligence_and_excluded_from_shortlist(self):
         candidate = self.run["shortlist"][0]
@@ -99,6 +111,9 @@ class IntegrationTests(unittest.TestCase):
         self.assertFalse(app.exception)
         self.assertEqual(app.metric[0].value, "3")
         self.assertIn("Rapid Resilience", [heading.value for heading in app.header])
+        self.assertTrue(any("Company age is unverified" in entry.value for entry in app.caption))
+        self.assertTrue(any("Jan Boeckmann" in entry.value for entry in app.text))
+        self.assertTrue(any("Munich Startup Festival" in entry.value for entry in app.text))
         self.assertEqual(len(app.get("download_button")), 2)
         app.radio[0].set_value("Verified research snapshot").run()
         app.button[0].click().run()

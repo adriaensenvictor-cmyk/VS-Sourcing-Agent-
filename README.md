@@ -15,7 +15,7 @@ python -m pip install -r requirements.txt
 python -m streamlit run app.py
 ```
 
-Choose **Live discovery**, select sources, and click **Run sourcing engine**. The lookback controls Show HN. TUM and TU Berlin use their current public directories, and GitHub uses its bounded search windows. Start with the shortlist, or turn off the shortlist filter to inspect excluded and lower-confidence candidates. The table and dossier show funding status, original sources, score components, evidence confidence and dated traces. JSON exports keep the shared contract and CSV exports provide a screening view.
+Choose **Live discovery**, select sources, and click **Run sourcing engine**. The lookback controls Show HN. TUM and TU Berlin use their current public directories, and GitHub uses its bounded search windows. Start with the shortlist, or turn off the shortlist filter to inspect excluded and lower-confidence candidates. The table and dossier show funding status, original sources, score components, evidence confidence and dated traces. The dossier distinguishes the age of the earliest public trace from the unknown company age. JSON exports keep the shared contract. CSV exports include the screening fields and JSON-encoded source URLs, founder evidence, claims, timeline, and funding review. The additional CSV columns are additive.
 
 **Verified research snapshot** loads the original manually researched examples for Simra AI, TerraTask and Jouly. The UI and exports label this mode. The independently captured PR #3 shortlist is in `research/founder-shortlist.json`.
 

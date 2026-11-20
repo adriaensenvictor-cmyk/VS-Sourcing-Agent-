@@ -96,17 +96,22 @@ else:
         st.header(item["name"])
         st.text(item["description"] or "Description unavailable.", help="Description from the source record")
         st.write(f'**Investment sector:** {item["sector"]}  |  **Location:** {item["location"]}')
-        st.text("Founding team · " + (item["team"] or "Names unavailable from public evidence"))
         location = item["location_evidence"]
         st.caption(f'Location confidence · {location.get("confidence", "unknown")}')
         left, right = st.columns([3, 2])
         with left:
+            st.subheader("Founders and team")
+            for person in item.get("founders", []):
+                role = person.get("role")
+                st.text(f'{person["name"]} · {role}' if role else person["name"])
+                if person.get("source_url"):
+                    st.caption(person["source_url"])
+            if not item.get("founders"):
+                st.text(item["team"] or "Names unavailable from public evidence.")
+
             st.subheader("Evidence ledger")
             if item.get("record_provenance"):
                 st.caption(item["record_provenance"])
-            for person in item.get("founders", []):
-                if person.get("source_url"):
-                    st.caption(person["source_url"])
             for entry in item.get("evidence", []):
                 st.text(f'{entry["signal"]} · {entry["excerpt"]}')
                 st.caption(entry["source_url"])
@@ -115,8 +120,11 @@ else:
                 st.caption(entry["source_url"])
 
             st.subheader("Evidence timeline")
+            st.caption(item["public_trace_age"])
+            st.caption("Company age is unverified. The timeline measures public evidence.")
             for event in item.get("timeline", []):
-                st.text(f'{event["date"]} · {event["label"]}')
+                qualifier = " · public visibility unverified" if event.get("public_signal") is False else ""
+                st.text(f'{event["date"]} · {event["label"]}{qualifier}')
                 st.caption(event["url"])
             if not item.get("timeline"):
                 st.caption("No dated public trace is available.")
@@ -142,6 +150,14 @@ else:
                     st.caption(check["source_url"])
             for report in item["funding"]["rounds"] + item["funding"]["public_support"]:
                 st.caption(report["source_url"])
+
+            st.subheader("Early-stage signals")
+            signals = item.get("commercialization_signals") or []
+            for signal in signals:
+                st.text(f'{signal["status"].title()} · {signal["type"].replace("_", " ")}')
+                st.caption(signal["source_url"])
+            if not signals:
+                st.caption("No commercialization signals documented in this run.")
 
             st.subheader("Diligence warnings")
             for flag in item.get("red_flags", []):
