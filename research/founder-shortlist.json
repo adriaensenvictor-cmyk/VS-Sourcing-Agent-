@@ -1,0 +1,482 @@
+{
+  "generated_at": "2026-11-20T14:56:14.968703+00:00",
+  "github_repositories_reviewed": 4,
+  "shortlist": [
+    {
+      "id": "tum:rapid-resilience",
+      "title": "Rapid Resilience",
+      "description": "“Listen to your supporters, but don’t listen to doubters. People told me: ‘AI can’t be used for rain mitigation’ or ‘The weather business is dead.’ Now I’m close to my first sales - cheers to the doubters!”",
+      "source": "TUM Venture Labs",
+      "location_query": "Germany (university ecosystem)",
+      "source_url": "https://www.tum-venture-labs.de/teams/rapid-resilience/",
+      "published_at": null,
+      "source_updated_at": "2025-12-15T14:18:55+01:00",
+      "funding_status": "unverified",
+      "score": 18,
+      "evidence": [
+        {
+          "signal": "Academic origin",
+          "excerpt": "The idea emerged during founder Jan Boeckmann’s PhD research at TUM Campus Straubing, where he analyzed optimal locations for flood-mitigation mea",
+          "source_url": "https://www.tum-venture-labs.de/teams/rapid-resilience/"
+        },
+        {
+          "signal": "Early project stage",
+          "excerpt": "ges for Rapid Resilience. Yet the venture starts from a strong position — a research-validated prototype and a digital product designed for low-maintenance deployment. With the support of the TUM Ven",
+          "source_url": "https://www.tum-venture-labs.de/teams/rapid-resilience/"
+        }
+      ],
+      "founders": [
+        {
+          "name": "Jan Boeckmann",
+          "role": "Founder",
+          "source_url": "https://www.tum-venture-labs.de/teams/rapid-resilience/",
+          "linkedin_url": "https://de.linkedin.com/in/jan-boeckmann-29a84b191"
+        }
+      ],
+      "intent_cues": [
+        {
+          "type": "prototype",
+          "text": "id Resilience. Yet the venture starts from a strong position — a research-validated prototype and a digital product designed for low-maintenance deployment. W",
+          "source_url": "https://www.tum-venture-labs.de/teams/rapid-resilience/",
+          "status": "hypothesis"
+        }
+      ],
+      "links": {
+        "github": [],
+        "linkedin": []
+      },
+      "founder": "Jan Boeckmann",
+      "profile": "https://de.linkedin.com/in/jan-boeckmann-29a84b191",
+      "project_url": "https://rapid-resilience.de/",
+      "milestones": [
+        {
+          "date": "2025-07-16",
+          "label": "Presented at Munich Startup Festival",
+          "url": "https://www.munich-startup.de/en/110579/impact-area-at-the-munich-startup-festival/"
+        }
+      ],
+      "linkedin": {
+        "public_links": [
+          "https://de.linkedin.com/in/jan-boeckmann-29a84b191"
+        ],
+        "search_url": "https://www.linkedin.com/search/results/all/?keywords=Jan+Boeckmann+Rapid+Resilience+founder"
+      },
+      "score_breakdown": {
+        "founder_quality": 4,
+        "entrepreneurial_intent": 3,
+        "commercial_potential": 2,
+        "earliness": 5,
+        "evidence_confidence": 4
+      },
+      "sources": [
+        "https://www.companyhouse.de/Rapid-Resilience-GmbH-Maikammer",
+        "https://www.munich-startup.de/en/110579/impact-area-at-the-munich-startup-festival/",
+        "https://www.tum-venture-labs.de/teams/rapid-resilience/"
+      ],
+      "claims": [
+        {
+          "type": "incorporation",
+          "text": "Rapid Resilience GmbH is listed as registered.",
+          "source_url": "https://www.companyhouse.de/Rapid-Resilience-GmbH-Maikammer",
+          "status": "verified"
+        },
+        {
+          "type": "customer_discovery",
+          "text": "The founder interviewed municipalities about flood mitigation.",
+          "source_url": "https://www.tum-venture-labs.de/teams/rapid-resilience/",
+          "status": "verified"
+        },
+        {
+          "type": "domain_experience",
+          "text": "The founder researched flood mitigation during his TUM doctorate.",
+          "source_url": "https://www.tum-venture-labs.de/teams/rapid-resilience/",
+          "status": "verified"
+        },
+        {
+          "type": "domain_experience",
+          "text": "The idea emerged during founder Jan Boeckmann’s PhD research at TUM Campus Straubing, where he analyzed optimal locations for flood-mitigation mea",
+          "source_url": "https://www.tum-venture-labs.de/teams/rapid-resilience/",
+          "status": "hypothesis"
+        },
+        {
+          "type": "prototype",
+          "text": "id Resilience. Yet the venture starts from a strong position — a research-validated prototype and a digital product designed for low-maintenance deployment. W",
+          "source_url": "https://www.tum-venture-labs.de/teams/rapid-resilience/",
+          "status": "hypothesis"
+        }
+      ],
+      "timeline": [
+        {
+          "date": "2025-07-16",
+          "label": "Presented at Munich Startup Festival",
+          "url": "https://www.munich-startup.de/en/110579/impact-area-at-the-munich-startup-festival/"
+        },
+        {
+          "date": "2026-09-22",
+          "label": "Company registration published",
+          "url": "https://www.companyhouse.de/Rapid-Resilience-GmbH-Maikammer"
+        }
+      ],
+      "earliest_verified_public_signal": {
+        "date": "2025-07-16",
+        "label": "Presented at Munich Startup Festival",
+        "url": "https://www.munich-startup.de/en/110579/impact-area-at-the-munich-startup-festival/"
+      },
+      "funding": {
+        "rounds": [],
+        "reviews": [
+          {
+            "checked_on": "2026-11-20",
+            "outcome": "no_funding_found",
+            "queries": [
+              "\"Rapid Resilience\" \"Jan Boeckmann\" Finanzierung VC funding seed round investment",
+              "\"Rapid Resilience\" \"Jan Boeckmann\" investor fundraising startup round"
+            ],
+            "sources": [
+              "https://www.tum-venture-labs.de/teams/rapid-resilience/",
+              "https://www.companyhouse.de/Rapid-Resilience-GmbH-Maikammer",
+              "https://rapid-resilience.de/"
+            ],
+            "scope": "Public search for a disclosed external investment round. Coverage is incomplete."
+          }
+        ],
+        "public_support": [],
+        "status": "no_funding_found"
+      },
+      "scores": {
+        "founder_quality": 4,
+        "entrepreneurial_intent": 3,
+        "commercial_potential": 2,
+        "earliness": 5,
+        "evidence_confidence": 4
+      },
+      "official_website": "https://rapid-resilience.de/",
+      "github_url": null,
+      "location": {
+        "country": "Germany",
+        "confidence": "registry",
+        "source_url": "https://www.companyhouse.de/Rapid-Resilience-GmbH-Maikammer"
+      },
+      "github_activity": [],
+      "commercialization_signals": [
+        {
+          "type": "incorporation",
+          "text": "Rapid Resilience GmbH is listed as registered.",
+          "source_url": "https://www.companyhouse.de/Rapid-Resilience-GmbH-Maikammer",
+          "status": "verified"
+        }
+      ],
+      "emergence_dimensions": {
+        "technical_execution": 5,
+        "founder_team": 10,
+        "commercialization": 8,
+        "early_stage": 10,
+        "market_potential": 8,
+        "evidence_quality": 10
+      },
+      "founder_emergence_score": 51,
+      "evidence_confidence": 10,
+      "reasons_to_investigate": [
+        {
+          "type": "incorporation",
+          "text": "Rapid Resilience GmbH is listed as registered.",
+          "source_url": "https://www.companyhouse.de/Rapid-Resilience-GmbH-Maikammer",
+          "status": "verified"
+        },
+        {
+          "type": "customer_discovery",
+          "text": "The founder interviewed municipalities about flood mitigation.",
+          "source_url": "https://www.tum-venture-labs.de/teams/rapid-resilience/",
+          "status": "verified"
+        },
+        {
+          "type": "domain_experience",
+          "text": "The founder researched flood mitigation during his TUM doctorate.",
+          "source_url": "https://www.tum-venture-labs.de/teams/rapid-resilience/",
+          "status": "verified"
+        }
+      ],
+      "missing_information": [
+        "Linked repository"
+      ],
+      "red_flags": [],
+      "shortlist_exclusions": []
+    },
+    {
+      "id": "tum:foresaight-ai",
+      "title": "foresAIght.ai",
+      "description": "Our mission is to empower European SMEs with forecasting capabilities previously reserved for tech giants. We aim to transform forecasting from a pain point into a strategic advantage — enabling smarter planning, less waste, higher customer satisfaction, and stronger competitiveness. Ultimately, we want to shape the future of forecasting by making ",
+      "source": "TUM Venture Labs",
+      "location_query": "Germany (university ecosystem)",
+      "source_url": "https://www.tum-venture-labs.de/teams/foresaight-ai/",
+      "published_at": null,
+      "source_updated_at": "2026-04-29T19:42:32+02:00",
+      "funding_status": "public_support_reported",
+      "score": 12,
+      "evidence": [
+        {
+          "signal": "Product validation",
+          "excerpt": "more conservative SME clients to trust in an AI-driven solution. We overcame this by offering transparent pilots, backtesting, and a strong focus on value delivery. Technically, building a scalable system th",
+          "source_url": "https://www.tum-venture-labs.de/teams/foresaight-ai/"
+        },
+        {
+          "signal": "Early project stage",
+          "excerpt": "ptimized models per use case required deep innovation and persistence. Moving from a working prototype to a production-grade, multi-client platform has been a demanding but rewarding challenge.",
+          "source_url": "https://www.tum-venture-labs.de/teams/foresaight-ai/"
+        }
+      ],
+      "founders": [
+        {
+          "name": "Julian Gruber",
+          "role": "Co-founder",
+          "source_url": "https://www.foresaight.ai/de/imprint"
+        },
+        {
+          "name": "Dr. Steffen Runge",
+          "role": "Founder",
+          "source_url": "https://www.tum-venture-labs.de/teams/foresaight-ai/"
+        },
+        {
+          "name": "Laura Mati",
+          "role": "Co-founder",
+          "source_url": "https://ch.linkedin.com/in/laura-mati-198a2858",
+          "linkedin_url": "https://ch.linkedin.com/in/laura-mati-198a2858"
+        }
+      ],
+      "intent_cues": [
+        {
+          "type": "prototype",
+          "text": "use case required deep innovation and persistence. Moving from a working prototype to a production-grade, multi-client platform has been a demandin",
+          "source_url": "https://www.tum-venture-labs.de/teams/foresaight-ai/",
+          "status": "hypothesis"
+        }
+      ],
+      "links": {
+        "github": [],
+        "linkedin": []
+      },
+      "founder": "Laura Mati",
+      "profile": "https://ch.linkedin.com/in/laura-mati-198a2858",
+      "project_url": "https://www.foresaight.ai/",
+      "funding_source": "https://www.foresaight.ai/",
+      "milestones": [],
+      "linkedin": {
+        "public_links": [
+          "https://ch.linkedin.com/in/laura-mati-198a2858"
+        ],
+        "search_url": "https://www.linkedin.com/search/results/all/?keywords=Laura+Mati+foresAIght.ai+founder"
+      },
+      "score_breakdown": {
+        "founder_quality": 2,
+        "entrepreneurial_intent": 4,
+        "commercial_potential": 2,
+        "earliness": 1,
+        "evidence_confidence": 3
+      },
+      "sources": [
+        "https://ch.linkedin.com/in/laura-mati-198a2858",
+        "https://www.foresaight.ai/de/imprint",
+        "https://www.tum-venture-labs.de/teams/foresaight-ai/"
+      ],
+      "claims": [
+        {
+          "type": "incorporation",
+          "text": "The company imprint identifies foresAIght.ai GmbH.",
+          "source_url": "https://www.foresaight.ai/de/imprint",
+          "status": "verified"
+        },
+        {
+          "type": "pilot",
+          "text": "more conservative SME clients to trust in an AI-driven solution. We overcame this by offering transparent pilots, backtesting, and a strong focus on value delivery. Technically, building a scalable system th",
+          "source_url": "https://www.tum-venture-labs.de/teams/foresaight-ai/",
+          "status": "hypothesis"
+        },
+        {
+          "type": "prototype",
+          "text": "use case required deep innovation and persistence. Moving from a working prototype to a production-grade, multi-client platform has been a demandin",
+          "source_url": "https://www.tum-venture-labs.de/teams/foresaight-ai/",
+          "status": "hypothesis"
+        }
+      ],
+      "timeline": [],
+      "earliest_verified_public_signal": null,
+      "funding": {
+        "rounds": [],
+        "reviews": [],
+        "public_support": [
+          {
+            "source_url": "https://www.foresaight.ai/",
+            "reported_as": "public_support_reported"
+          }
+        ],
+        "status": "unknown"
+      },
+      "scores": {
+        "founder_quality": 2,
+        "entrepreneurial_intent": 4,
+        "commercial_potential": 2,
+        "earliness": 1,
+        "evidence_confidence": 3
+      },
+      "official_website": "https://www.foresaight.ai/",
+      "github_url": null,
+      "location": {
+        "country": "Germany",
+        "confidence": "ecosystem",
+        "source_url": "https://www.tum-venture-labs.de/teams/foresaight-ai/"
+      },
+      "github_activity": [],
+      "commercialization_signals": [
+        {
+          "type": "incorporation",
+          "text": "The company imprint identifies foresAIght.ai GmbH.",
+          "source_url": "https://www.foresaight.ai/de/imprint",
+          "status": "verified"
+        },
+        {
+          "type": "pilot",
+          "text": "more conservative SME clients to trust in an AI-driven solution. We overcame this by offering transparent pilots, backtesting, and a strong focus on value delivery. Technically, building a scalable system th",
+          "source_url": "https://www.tum-venture-labs.de/teams/foresaight-ai/",
+          "status": "hypothesis"
+        }
+      ],
+      "emergence_dimensions": {
+        "technical_execution": 5,
+        "founder_team": 15,
+        "commercialization": 11,
+        "early_stage": 0,
+        "market_potential": 4,
+        "evidence_quality": 10
+      },
+      "founder_emergence_score": 45,
+      "evidence_confidence": 10,
+      "reasons_to_investigate": [
+        {
+          "type": "incorporation",
+          "text": "The company imprint identifies foresAIght.ai GmbH.",
+          "source_url": "https://www.foresaight.ai/de/imprint",
+          "status": "verified"
+        },
+        {
+          "type": "pilot",
+          "text": "more conservative SME clients to trust in an AI-driven solution. We overcame this by offering transparent pilots, backtesting, and a strong focus on value delivery. Technically, building a scalable system th",
+          "source_url": "https://www.tum-venture-labs.de/teams/foresaight-ai/",
+          "status": "hypothesis"
+        }
+      ],
+      "missing_information": [
+        "Linked repository",
+        "Dated public signal",
+        "Funding check"
+      ],
+      "red_flags": [],
+      "shortlist_exclusions": []
+    },
+    {
+      "id": "tum:exist-autonomous-trucks-20260806",
+      "title": "Autonomous trucks project (team name undisclosed)",
+      "description": "TUM recruitment announcement for a business co-founder on an autonomous-trucks project.",
+      "source_url": "https://portal.mytum.de/jobs/wissenschaftler/NewsArticle_20260806_092633/newsarticle_view",
+      "sources": [
+        "https://portal.mytum.de/jobs/wissenschaftler/NewsArticle_20260806_092633/newsarticle_view"
+      ],
+      "source": "TUM public EXIST-related announcement",
+      "location": {
+        "country": "Germany",
+        "confidence": "ecosystem",
+        "source_url": "https://portal.mytum.de/jobs/wissenschaftler/NewsArticle_20260806_092633/newsarticle_view"
+      },
+      "claims": [
+        {
+          "type": "hiring",
+          "text": "The team is recruiting a business co-founder.",
+          "source_url": "https://portal.mytum.de/jobs/wissenschaftler/NewsArticle_20260806_092633/newsarticle_view",
+          "status": "verified"
+        },
+        {
+          "type": "commercialization",
+          "text": "The team says it is forming a startup and applying for EXIST.",
+          "source_url": "https://portal.mytum.de/jobs/wissenschaftler/NewsArticle_20260806_092633/newsarticle_view",
+          "status": "verified"
+        }
+      ],
+      "timeline": [
+        {
+          "date": "2026-08-06",
+          "url": "https://portal.mytum.de/jobs/wissenschaftler/NewsArticle_20260806_092633/newsarticle_view",
+          "label": "Public call for a business co-founder"
+        }
+      ],
+      "links": {
+        "github": []
+      },
+      "official_website": null,
+      "github_url": null,
+      "founders": [],
+      "earliest_verified_public_signal": {
+        "date": "2026-08-06",
+        "url": "https://portal.mytum.de/jobs/wissenschaftler/NewsArticle_20260806_092633/newsarticle_view",
+        "label": "Public call for a business co-founder"
+      },
+      "github_activity": [],
+      "commercialization_signals": [
+        {
+          "type": "hiring",
+          "text": "The team is recruiting a business co-founder.",
+          "source_url": "https://portal.mytum.de/jobs/wissenschaftler/NewsArticle_20260806_092633/newsarticle_view",
+          "status": "verified"
+        },
+        {
+          "type": "commercialization",
+          "text": "The team says it is forming a startup and applying for EXIST.",
+          "source_url": "https://portal.mytum.de/jobs/wissenschaftler/NewsArticle_20260806_092633/newsarticle_view",
+          "status": "verified"
+        }
+      ],
+      "funding": {
+        "rounds": [],
+        "reviews": [],
+        "public_support": [],
+        "status": "unknown"
+      },
+      "emergence_dimensions": {
+        "technical_execution": 0,
+        "founder_team": 0,
+        "commercialization": 16,
+        "early_stage": 5,
+        "market_potential": 0,
+        "evidence_quality": 4
+      },
+      "founder_emergence_score": 25,
+      "evidence_confidence": 4,
+      "reasons_to_investigate": [
+        {
+          "type": "hiring",
+          "text": "The team is recruiting a business co-founder.",
+          "source_url": "https://portal.mytum.de/jobs/wissenschaftler/NewsArticle_20260806_092633/newsarticle_view",
+          "status": "verified"
+        },
+        {
+          "type": "commercialization",
+          "text": "The team says it is forming a startup and applying for EXIST.",
+          "source_url": "https://portal.mytum.de/jobs/wissenschaftler/NewsArticle_20260806_092633/newsarticle_view",
+          "status": "verified"
+        }
+      ],
+      "missing_information": [
+        "Verified founder names",
+        "Official website",
+        "Linked repository",
+        "Funding check",
+        "Customer or market validation"
+      ],
+      "red_flags": [],
+      "shortlist_exclusions": []
+    }
+  ],
+  "manual_review": [
+    "tum:rapid-resilience",
+    "tum:foresaight-ai",
+    "tum:exist-autonomous-trucks-20260806"
+  ]
+}
