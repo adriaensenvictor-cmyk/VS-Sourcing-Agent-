@@ -6,6 +6,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 from urllib.error import URLError
 
+from ai_score import _candidate_rows
 from ai_scoring import (
     MissingAPIKeyError,
     OpenAIRequestError,
@@ -56,6 +57,14 @@ def mocked_response(result):
 
 
 class AIScoringTests(unittest.TestCase):
+    def test_cli_accepts_first_trace_candidate_envelope(self):
+        candidates = [{"id": "one", "name": "One"}]
+        self.assertEqual(_candidate_rows({"schema_version": 1, "candidates": candidates}), candidates)
+
+    def test_cli_rejects_empty_envelope(self):
+        with self.assertRaises(ValueError):
+            _candidate_rows({"schema_version": 1, "candidates": []})
+
     def test_incomplete_candidate_returns_insufficient_evidence(self):
         candidate = {"id": "sparse", "title": "Sparse lead"}
         with tempfile.TemporaryDirectory() as directory, patch(
