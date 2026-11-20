@@ -3,24 +3,65 @@ import csv
 import io
 import json
 import os
+import re
+from datetime import datetime, timezone
+from urllib.parse import urlparse
 
 import streamlit as st
 from engine import load_research_snapshot, run_live
 
-st.set_page_config(page_title="Hidden Gem | HTGF Scout", page_icon="💎",
-                   layout="wide", initial_sidebar_state="expanded")
+def funding_stage(status):
+    """Group explicit round labels for display while preserving the source wording."""
+    text = (status or "").casefold()
+    if not text or re.search(r"unknown|unverified|not verified|not confirmed|no funding found|no equity|seeking|planned|targeting", text):
+        return "Unverified"
+    if re.search(r"\bpre[ -]seed\b", text):
+        return "Pre-seed"
+    match = re.search(r"\bseries[ -]([a-z])\b", text)
+    if match:
+        return {"a": "Series A", "b": "Series B"}.get(match[1], "Series C+")
+    if re.search(r"\bseed\b", text):
+        return "Seed"
+    if re.search(r"\bgrowth\b", text):
+        return "Growth"
+    return "Other / review"
+
+
+def evidence_date(value):
+    """Parse ISO evidence dates without guessing from text or using today's date."""
+    try:
+        parsed = datetime.fromisoformat((value or "").replace("Z", "+00:00"))
+    except (ValueError, AttributeError):
+        return None
+    return parsed.replace(tzinfo=timezone.utc) if parsed.tzinfo is None else parsed
+
+
+def safe_url(value):
+    try:
+        parsed = urlparse(value or "")
+        return value if parsed.scheme in {"http", "https"} and parsed.hostname else None
+    except (ValueError, AttributeError):
+        return None
+
+
+st.set_page_config(page_title="FirstTrace | HTGF Scout", layout="wide")
 st.markdown("""
 <style>
-.stApp {background-color:#0b1020;color:#f4f5ff}
-div[data-testid="stMetric"] {background:#171f36;border:1px solid #35405b;border-radius:12px;padding:12px}
-h1,h2,h3 {letter-spacing:-.025em}
+[data-testid="stMainBlockContainer"] {max-width:1240px;padding-top:2.1rem}
+.firsttrace-hero {background:linear-gradient(115deg,#112c25,#205244);color:#f5fff8;
+                 border-radius:1.25rem;padding:clamp(1.25rem,4vw,3rem);margin-bottom:1rem}
+.firsttrace-hero h1 {color:#fff;font-size:clamp(2.2rem,6vw,4.25rem);
+                    letter-spacing:-.045em;line-height:1.05;margin:.35rem 0 .75rem;padding:0}
+.firsttrace-hero p {color:#d6eadd;margin:0}
+.firsttrace-hero .desk {font-size:.8rem;letter-spacing:.075em;text-transform:uppercase}
+div[data-testid="stMetric"] {border:1px solid rgba(78,118,97,.28);border-radius:.75rem;padding:.7rem}
 </style>
+<div class="firsttrace-hero">
+  <p class="desk">FirstTrace · HTGF sourcing desk</p>
+  <h1>Find the founders early.</h1>
+  <p>Review startup signals, compare evidence and decide who to meet.</p>
+</div>
 """, unsafe_allow_html=True)
-
-st.title("💎 Hidden Gem")
-st.caption("Early-stage founder intelligence · HTGF MAIN Summit 2026 · Evidence before hype")
-st.info("Lead scores prioritize review; they are **not** investment recommendations or probabilities. "
-        "Funding is **unverified** unless independently checked. A university grant is not a VC funding round.")
 
 with st.sidebar:
     st.header("Discovery settings")
@@ -41,7 +82,8 @@ with st.sidebar:
 def cached_live(which, days, has_token, token_value):
     return run_live(which, days, token_value if has_token else None)
 
-if "leads" not in st.session_state or run:
+if ("leads" not in st.session_state or run
+    or (mode == "Verified research snapshot" and st.session_state.get("scanned_mode") != mode)):
     if mode == "Verified research snapshot":
         st.session_state["leads"] = load_research_snapshot()
         st.session_state["errors"] = []
@@ -58,62 +100,88 @@ if "leads" not in st.session_state or run:
         st.session_state["scanned_mode"] = "Not scanned"
 
 scanned_mode = st.session_state["scanned_mode"]
-leads = [x for x in st.session_state["leads"] if x["score"] >= minimum]
+candidates = st.session_state["leads"]
 errors = st.session_state.get("errors", [])
+st.caption(f"Data mode: {scanned_mode} · Scores prioritize review. Grants and equity are tracked separately.")
 if scanned_mode == "Verified research snapshot":
-    st.warning("DEMO RESEARCH MODE: these are genuine source-linked examples manually collected "
-               "on 20 Nov 2026. They were NOT discovered by the live engine.")
+    st.info("Reference snapshot · Manually researched cases collected on 20 Nov 2026.")
 elif scanned_mode == "Not scanned":
-    st.write("Select sources and click **Run sourcing engine**. "
-             "Or switch to the explicitly labelled reference snapshot for a reliable offline walkthrough.")
+    st.write("Run discovery from the sidebar, or choose the research snapshot for an offline walkthrough.")
 for err in errors:
-    st.error(f"Source unavailable (other sources may still work): {err}")
+    st.error(f"Source unavailable: {err}")
+
+leads = []
+if candidates:
+    st.subheader("Lead inbox")
+    search = st.text_input("Search leads", placeholder="Search companies, founders or locations")
+    sectors, stages = st.columns(2)
+    with sectors:
+        sector_filter = st.multiselect("Sectors", sorted({x["sector"] for x in candidates}))
+    with stages:
+        funding_filter = st.multiselect("Funding stages", [
+            "Pre-seed", "Seed", "Series A", "Series B", "Series C+",
+            "Growth", "Other / review", "Unverified",
+        ])
+    for item in candidates:
+        searchable = " ".join(str(item.get(key) or "") for key in (
+            "name", "team", "sector", "location", "origin", "description",
+        )).casefold()
+        if (item["score"] >= minimum
+            and all(word in searchable for word in search.casefold().split())
+            and (not sector_filter or item["sector"] in sector_filter)
+            and (not funding_filter or funding_stage(item.get("funding_status")) in funding_filter)):
+            leads.append(item)
+    st.caption(f"{len(leads)} of {len(candidates)} leads match your filters")
 
 if leads:
-    a, b, c, d = st.columns(4)
-    a.metric("Leads to review", len(leads))
-    b.metric("Named founding teams", sum(bool(x["founder_identified"]) for x in leads))
-    c.metric("German-location leads", sum("germany" in x["location"].lower()
-              or "berlin" in x["location"].lower() for x in leads))
-    d.metric("Evidence links", sum(len(x["evidence"]) for x in leads))
-    st.subheader("Evidence-ranked opportunity queue")
-    st.dataframe([
-        {"Score /100": x["score"], "Project": x["name"], "Sector": x["sector"],
-         "Location": x["location"], "Origin": x["origin"],
-         "Team review": x["lead_status"], "Funding": "Not verified"}
-        for x in leads
-    ], hide_index=True, use_container_width=True)
-    selection = st.selectbox("Investigate a lead", range(len(leads)),
-                             format_func=lambda i: f'{leads[i]["name"]} · {leads[i]["score"]}/100')
-    item = leads[selection]
-    st.divider()
-    st.header(item["name"])
-    st.write(item["description"][:1300])
-    st.write(f'**Investment sector:** {item["sector"]}  |  **Location:** {item["location"]}')
-    st.write(f'**Founding team:** {item["team"] or "Not identified from available public evidence"}')
-    st.write(f'**Source:** {item["source_url"]}')
-    st.write(f'**Project:** {item["project_url"]}')
-    left, right = st.columns([3, 2])
-    with left:
-        st.subheader("Evidence ledger")
-        for e in item["evidence"]:
-            st.markdown(f'**{e["signal"]}** — {e["excerpt"]}')
-            st.caption(e["url"] + (f' · {e["observed_at"]}' if e.get("observed_at") else ""))
-        st.subheader("What a VC analyst should verify next")
-        st.markdown("- Confirm the founding team and relevant commercial/IP experience\n"
-                    "- Search press and funding databases for prior equity rounds\n"
-                    "- Check pilots, customers, willingness to pay and addressable market\n"
-                    "- Establish IP ownership and whether this is a startup rather than a side project\n"
-                    "- Verify timing: earliest *public* trace versus first public funding announcement")
-    with right:
-        st.subheader("Why it was ranked here")
-        st.caption("Heuristic prioritization, not a success probability")
-        st.json(item["score_components"])
-        st.subheader("Diligence warnings")
-        for w in item["warnings"]:
-            st.write("• " + w)
-        st.markdown("**Funding conclusion:** Unknown — requires independent verification")
-        st.markdown("**Earliness versus Dealroom/Crunchbase:** Not measured")
+    queue, details = st.columns([2, 3], gap="large")
+    with queue:
+        st.subheader("Opportunities")
+        by_id = {lead["id"]: lead for lead in leads}
+        selection = st.selectbox("Select a startup", list(by_id),
+                                 format_func=lambda key: f'{by_id[key]["name"]} · {by_id[key]["score"]}/100')
+        st.dataframe([
+            {"Project": x["name"], "Score": x["score"], "Funding": funding_stage(x.get("funding_status"))}
+            for x in leads
+        ], hide_index=True, use_container_width=True)
+    with details:
+        item = by_id[selection]
+        st.header(item["name"])
+        score, funding = st.columns([1, 2])
+        score.metric("Review score", f'{item["score"]}/100')
+        funding.caption("Funding status")
+        funding.write(item.get("funding_status") or "Unverified")
+        st.caption(f'{item["sector"]} · {item["location"]} · {item["origin"]}')
+        st.write(item["description"][:1300])
+        st.write(f'**Founding team** · {item["team"] or "Unverified"}')
+        for label, key in (("Open project", "project_url"), ("Open discovery source", "source_url")):
+            if url := safe_url(item.get(key)):
+                st.link_button(label, url)
+
+        timeline, scoring, diligence = st.tabs(["Evidence timeline", "Score breakdown", "Diligence"])
+        with timeline:
+            dated = []
+            undated = []
+            for evidence in item["evidence"]:
+                entry = (evidence_date(evidence.get("observed_at")), evidence)
+                (dated if entry[0] else undated).append(entry)
+            if not dated and not undated:
+                st.caption("No evidence entries are available for this lead.")
+            for stamp, evidence in sorted(dated, key=lambda entry: entry[0]) + undated:
+                st.caption(stamp.date().isoformat() if stamp else "Date unverified")
+                st.write(evidence["signal"])
+                st.write(evidence["excerpt"])
+                if url := safe_url(evidence.get("url")):
+                    st.link_button("Open evidence source", url)
+        with scoring:
+            st.caption("Points supplied by the sourcing engine.")
+            if item["score_components"]:
+                st.table([{"Signal": name, "Points": points}
+                          for name, points in item["score_components"].items()])
+        with diligence:
+            for warning in item["warnings"]:
+                st.write("• " + warning)
+            st.caption("Confirm team identity and equity financing before outreach. Compare publication dates against a dated baseline to assess earliness.")
     st.divider()
     st.subheader("Download the evidence trail")
     st.download_button("Export lead dossiers (JSON)",
