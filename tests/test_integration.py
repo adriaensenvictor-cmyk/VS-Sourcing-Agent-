@@ -37,6 +37,18 @@ class IntegrationTests(unittest.TestCase):
         self.assertIn("scoped review", rows[0]["funding_label"])
         self.assertIn("Unknown", rows[1]["funding_label"])
 
+    def test_live_candidate_without_team_stays_searchable(self):
+        candidate = {**self.run["shortlist"][0], "founders": [], "team": None}
+        run = {**self.run, "candidates": [candidate], "shortlist": [candidate]}
+        with tempfile.TemporaryDirectory() as tmp:
+            db = {"FIRSTTRACE_DB_PATH": str(Path(tmp) / "inbox.sqlite3")}
+            with patch.dict("os.environ", db), patch("discovery_pipeline.run_discovery", return_value=run):
+                app = AppTest.from_file(str(ROOT / "app.py")).run()
+                app.button[0].click().run()
+                app.text_input(key="query").set_value("Rapid").run()
+        self.assertFalse(app.exception)
+        self.assertIn("Rapid Resilience", [heading.value for heading in app.header])
+
     def test_exports_keep_filtered_funding_and_canonical_json(self):
         row = dashboard_rows(self.run)[0]
         payload = json.loads(export_json(self.run, [row]))

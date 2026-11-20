@@ -65,7 +65,7 @@ def dashboard_rows(run, *, shortlist_only=False):
             "origin": row.get("source") or "Unknown source",
             "location": location.get("country") or "Needs verification",
             "location_evidence": location,
-            "team": " · ".join(person["name"] for person in founders) or row.get("team", ""),
+            "team": " · ".join(person["name"] for person in founders) or row.get("team") or "",
             "founder_identified": bool(founders or row.get("team")),
             "score": row["founder_emergence_score"],
             "score_components": row.get("emergence_dimensions", {}),
