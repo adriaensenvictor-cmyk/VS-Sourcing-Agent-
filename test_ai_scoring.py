@@ -6,7 +6,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 from urllib.error import URLError
 
-from ai_score import _candidate_rows
+from ai_score import _candidate_rows, _evaluation_candidates
 from ai_scoring import (
     MissingAPIKeyError,
     OpenAIRequestError,
@@ -60,6 +60,17 @@ class AIScoringTests(unittest.TestCase):
     def test_cli_accepts_first_trace_candidate_envelope(self):
         candidates = [{"id": "one", "name": "One"}]
         self.assertEqual(_candidate_rows({"schema_version": 1, "candidates": candidates}), candidates)
+
+    def test_cli_defaults_to_first_candidate_to_limit_api_calls(self):
+        candidates = [{"id": "one"}, {"id": "two"}]
+        self.assertEqual(_evaluation_candidates({"candidates": candidates}), candidates[:1])
+
+    def test_cli_can_select_all_candidates_explicitly(self):
+        candidates = [{"id": "one"}, {"id": "two"}]
+        self.assertEqual(
+            _evaluation_candidates({"candidates": candidates}, all_candidates=True),
+            candidates,
+        )
 
     def test_cli_rejects_empty_envelope(self):
         with self.assertRaises(ValueError):
