@@ -1,0 +1,711 @@
+{
+  "observed_at": "2026-11-20T14:48:02+00:00",
+  "projects": [
+    {
+      "name": "Spherecast",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Seal Robotics",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "CedarDB",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Hula Earth",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Munich Quantum Instruments",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "SynthesEyes",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Radical Dot",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Impetus Sailing Team",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "WARR space labs",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "TUM Carbon Removal Initiative e.V.",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Olive Robotics",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Holloid",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Medicalytix",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "3C-Labs",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "beworm",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Avemoy",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Noxon",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "1point8",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Atlas",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Roundpeg Technologies",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Mily Technologies",
+      "tags": [
+        "software"
+      ],
+      "noise": false
+    },
+    {
+      "name": "DASH e.V.",
+      "tags": [],
+      "noise": true
+    },
+    {
+      "name": "VIABLE Surgery",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "AMPERIAL - Smart Window Technologies",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Puray",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Airgae",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Cebellum",
+      "tags": [
+        "infrastructure",
+        "software"
+      ],
+      "noise": false
+    },
+    {
+      "name": "Qoro Quantum",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Medigital",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "SUPPLYZ",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "BAVERTIS",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "trado.",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Energyminer",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "workride.",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Hapticlabs",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "caire",
+      "tags": [
+        "software"
+      ],
+      "noise": false
+    },
+    {
+      "name": "Scholarmaps",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Crestworks",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Emil Motors",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "AcTLAbS",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "MIMBIOSIS",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "AgroDetectAI",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "CinSOIL",
+      "tags": [
+        "software"
+      ],
+      "noise": false
+    },
+    {
+      "name": "Decyde",
+      "tags": [
+        "data teams",
+        "software"
+      ],
+      "noise": false
+    },
+    {
+      "name": "Sinforsa",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Sensus",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "LEVITUM e.V.",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Visonation",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "FOODYOU",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Otter Energy Trading",
+      "tags": [
+        "software"
+      ],
+      "noise": false
+    },
+    {
+      "name": "FLOW eye",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Falcon Vision",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Qualiwise",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Lactoverde",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Octave",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "HopfON",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Trem-Blocks",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "iNSyT",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Emidat",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Hoop Solar",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Ignition Aerospace",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Yngvik",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "CRATER (WARR Space Robotics)",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "NTRDE",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "VORTEX",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Perian",
+      "tags": [
+        "infrastructure"
+      ],
+      "noise": false
+    },
+    {
+      "name": "ImuVeo",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Empacto",
+      "tags": [
+        "software"
+      ],
+      "noise": false
+    },
+    {
+      "name": "TUM Boring Innovation in Tunneling e.V.",
+      "tags": [
+        "infrastructure"
+      ],
+      "noise": false
+    },
+    {
+      "name": "neuroTUM",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "CyberDesk",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "deltaVision",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "watchr",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "mo:re",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Cocrafter",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Biomotion Technologies",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Aquafy",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "AlgenTechnik",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "MOA Mobility",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "EnHands",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "WasteEx",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Admyral",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "AICU",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Alganize",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Beautechful",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Bevel",
+      "tags": [
+        "codebases",
+        "llms",
+        "software"
+      ],
+      "noise": false
+    },
+    {
+      "name": "Bluebear",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Bonescreen",
+      "tags": [
+        "software"
+      ],
+      "noise": false
+    },
+    {
+      "name": "Countful",
+      "tags": [
+        "llms"
+      ],
+      "noise": false
+    },
+    {
+      "name": "ExoSphere",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Fungtional Bio",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Healthiator",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "KATALYST",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Micro Factory",
+      "tags": [
+        "software"
+      ],
+      "noise": false
+    },
+    {
+      "name": "Patalyze",
+      "tags": [
+        "software"
+      ],
+      "noise": false
+    },
+    {
+      "name": "Prio Optics",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "QTAS",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "SAM Robotics",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "skyLARC",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "syn2core",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "TUfast Moto Electric",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "alago.ai",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Aiina Robotics",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Accelion",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "APS",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "2NA Fish",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Everybot",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Furward",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Lexet AI",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Neeno",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "OnMCU",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "ROBOTUM",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Rooted",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Spacio",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "TRITON",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Valuemize",
+      "tags": [
+        "software"
+      ],
+      "noise": false
+    },
+    {
+      "name": "DeepMask",
+      "tags": [
+        "llms"
+      ],
+      "noise": false
+    },
+    {
+      "name": "Fibclick",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Clinivox",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "ProviGen.ai",
+      "tags": [
+        "software"
+      ],
+      "noise": false
+    },
+    {
+      "name": "Cellvi",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "IARET Catalysis",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "nuno.ai",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Linq Photonics",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Blue Aegis Technologies",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Cancelight",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Twogee Biotech",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Tissue Mind",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "Metalonn",
+      "tags": [],
+      "noise": false
+    },
+    {
+      "name": "ESG-X",
+      "tags": [
+        "llm",
+        "software"
+      ],
+      "noise": false
+    }
+  ],
+  "releases": {
+    "Bevel": [
+      {
+        "title": "bevel-language-server-releases · bevel-0.6.0",
+        "url": "https://github.com/Bevel-Software/bevel-language-server-releases/releases/tag/bevel-0.6.0",
+        "date": "2025-04-19"
+      },
+      {
+        "title": "Hexis · v0.8.0",
+        "url": "https://github.com/Bevel-Software/Hexis/releases/tag/v0.8.0",
+        "date": "2026-08-16"
+      }
+    ]
+  },
+  "errors": []
+}

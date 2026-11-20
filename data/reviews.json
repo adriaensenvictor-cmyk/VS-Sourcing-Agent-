@@ -1,0 +1,47 @@
+{
+  "Bevel": {
+    "team": "Ali Raza, Juan Ignacio Viera Garcia and Razvan Radulescu",
+    "team_url": "https://www.tumcso.com/teaching/final-theses-and-project-studies-bachelor-master/available-topics/scale-with-cdtm-startup-bevel-with-idp-project",
+    "product": "Munich-based team now building a Git-backed control plane for enterprise AI agents. Its earlier work targeted legacy code modernization.",
+    "product_url": "https://www.bevel.software/about",
+    "market": "Enterprise platform teams need to manage agent tooling and permissions across vendors. Validate who owns the budget and whether open-source adoption converts to paid deployments.",
+    "funding": "Equity unconfirmed. Dealroom lists a spinout. This public check does not establish whether a private round took place.",
+    "funding_url": "https://app.dealroom.co/companies/bevel_3",
+    "repositories": ["Bevel-Software/bevel-language-server-releases", "Bevel-Software/Hexis"]
+  },
+  "Cebellum": {
+    "hold": "The team announced it was joining UniteLabs. Verify independence before treating it as an actionable company.",
+    "hold_url": "https://www.linkedin.com/posts/james-rae-expansive_nextstep-funding-labofthefuture-activity-6988824713057738752-_QXk"
+  },
+  "Patalyze": {
+    "team": "Daniel Stoll, founder and managing director",
+    "team_url": "https://daniel-stoll.com/",
+    "product": "Munich-area enterprise software for product-to-patent mapping and patent analysis.",
+    "product_url": "https://patalyze.com/docs/mcp",
+    "market": "Patent teams and law firms may pay to shorten initial review. Validate paid repeat use and the quality of evidence when matches are ambiguous.",
+    "funding": "Equity unconfirmed. The reviewed profile names a competition, an accelerator and an ecosystem funding programme. Verify privately before treating it as pre-equity.",
+    "funding_url": "https://www.cbinsights.com/company/patalyze"
+  },
+  "ESG-X": {
+    "hold": "The company reports a financing round in 2024 and joining Dcycle in 2026.",
+    "hold_url": "https://www.esg-x.com/en/company/about"
+  },
+  "nuno.ai": {
+    "hold": "A database reports a June 2026 seed investment. Keep out of the new-lead queue while financing evidence is reconciled.",
+    "hold_url": "https://www.cbinsights.com/company/nuno-labs/financials"
+  },
+  "Valuemize": {
+    "hold": "The founder publicly announced a seven-figure pre-seed round. Useful for a historical comparison.",
+    "hold_url": "https://www.linkedin.com/posts/michael-domanegg_we-secured-7-figures-in-pre-seed-funding-activity-7483416470530576385-7IFp",
+    "comparison": {
+      "signal_date": "2024-02-23",
+      "signal_url": "https://www.baystartup.de/startupdate/wettbewerbs-updates/die-nominierten-im-muenchener-businessplan-wettbewerb-2024-phase-1",
+      "baseline_date": "2026-07-16",
+      "baseline_url": "https://www.startbase.de/news/valuemize-erhaelt-siebenstellige-pre-seed-finanzierung/"
+    }
+  },
+  "DeepMask": {
+    "hold": "The legal entity and project appear to have different start dates. Resolve incorporation and financing history before outreach.",
+    "hold_url": "https://www.deepmask.io/imprints-privacy-terms"
+  }
+}
