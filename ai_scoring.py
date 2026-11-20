@@ -209,7 +209,7 @@ def _cache_put(cache_path, key, result):
 
 def _candidate_urls(value):
     urls = set()
-    pattern = re.compile(r"https?://[^\s<>""']+")
+    pattern = re.compile(r"https?://[^\s<>]+")
     def visit(item):
         if isinstance(item, dict):
             for child in item.values():
