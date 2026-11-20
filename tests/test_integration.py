@@ -3,6 +3,7 @@ import csv
 import io
 import json
 import subprocess
+import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -104,6 +105,11 @@ class IntegrationTests(unittest.TestCase):
         self.assertEqual(status["state"], "partial")
 
     def test_app_consumes_authoritative_shortlist_and_keeps_snapshot_mode(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        db_path = patch.dict("os.environ", {"FIRSTTRACE_DB_PATH": str(Path(tmp.name) / "inbox.sqlite3")})
+        db_path.start()
+        self.addCleanup(db_path.stop)
         app = AppTest.from_file(str(ROOT / "app.py")).run()
         with patch("discovery_pipeline.run_discovery", return_value=self.run) as run:
             app.button[0].click().run()
@@ -114,8 +120,8 @@ class IntegrationTests(unittest.TestCase):
         self.assertTrue(any("Company age is unverified" in entry.value for entry in app.caption))
         self.assertTrue(any("Jan Boeckmann" in entry.value for entry in app.text))
         self.assertTrue(any("Munich Startup Festival" in entry.value for entry in app.text))
-        self.assertEqual(len(app.get("download_button")), 2)
-        app.radio[0].set_value("Verified research snapshot").run()
+        self.assertEqual(len(app.get("download_button")), 3)
+        app.radio(key="data_mode").set_value("Verified research snapshot").run()
         app.button[0].click().run()
         self.assertFalse(app.exception)
         self.assertTrue(any("DEMO RESEARCH MODE" in warning.value for warning in app.warning))

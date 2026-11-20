@@ -19,6 +19,14 @@ Choose **Live discovery**, select sources, and click **Run sourcing engine**. Th
 
 **Verified research snapshot** loads the original manually researched examples for Simra AI, TerraTask and Jouly. The UI and exports label this mode. The independently captured PR #3 shortlist is in `research/founder-shortlist.json`.
 
+## Scout workflow
+
+In **Screening**, filter by geography, company age, funding, and sector. Give a lead a **Meet**, **Watch**, or **Pass** decision with a reason. Live decisions and saved evidence appear in **New since review**. **Historical replay** presents a curated case with later evidence revealed after the scout makes a call.
+
+The desk stores its own workflow state. Run `python scout_inbox.py` to refresh it outside Streamlit. The scanner and dashboard use `FIRSTTRACE_DB_PATH` or `~/.firsttrace/scout-workflow.sqlite3`. For the optional sourced OpenAI brief, provide `OPENAI_API_KEY` to the dashboard process. The written brief and downloads are usable offline. A model call occurs when the analyst explicitly submits a question.
+
+See the [competitive review, demo sequence, and n8n runbook](research/scout-workflow.md).
+
 ## Run the engine and tests
 
 ```sh
