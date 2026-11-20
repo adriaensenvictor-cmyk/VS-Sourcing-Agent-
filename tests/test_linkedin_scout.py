@@ -38,7 +38,8 @@ class LinkedInScoutTests(TestCase):
 
     def test_user_submission_enters_engine_as_early_evidence_not_a_verified_grade(self):
         record = submitted_post(POST, "Alex Doe", "Example Venture", "Germany", "Looking for a co-founder",
-                                "Industrial software concept.", posted_on=date(2026, 11, 20))
+                                "Alex Doe previously worked at Celonis. Industrial software concept.",
+                                posted_on=date(2026, 11, 20))
         run = run_discovery((LINKEDIN_SOURCE,), linkedin_leads=[record])
         self.assertEqual(run["source_status"][LINKEDIN_SOURCE]["count"], 1)
         row = dashboard_rows(run, shortlist_only=True)[0]
@@ -46,6 +47,7 @@ class LinkedInScoutTests(TestCase):
         self.assertEqual(row["funding_status"], "unknown")
         self.assertEqual(row["evidence"][0]["signal"], PUBLIC_POST)
         self.assertIsNone(row["founder_venture_fit"]["score"])
+        self.assertTrue(any(e.get("reference") == "Celonis" for e in row["evidence"]))
 
     def test_workspace_can_save_a_linkedin_source(self):
         with TemporaryDirectory() as folder:
@@ -53,6 +55,8 @@ class LinkedInScoutTests(TestCase):
             with patch.dict("os.environ", {"FIRSTTRACE_DB_PATH": str(path)}):
                 desk = AppTest.from_file(APP).run()
                 desk.selectbox(key="workspace").select("LinkedIn scouting").run()
+                desk.selectbox(key="employer_group").select("Global technology and AI").run()
+                self.assertIn("Google DeepMind", desk.selectbox(key="employer_search").options)
                 fields = {"Public LinkedIn post link": POST, "Founder name": "Alex Doe",
                           "Venture or project": "Example Venture"}
                 for field in desk.text_input:

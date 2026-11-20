@@ -2,16 +2,19 @@
 import re
 
 
-EMPLOYERS = (
-    "Goldman Sachs", "Jane Street", "Deutsche Bank", "Bloomberg", "Google DeepMind",
-    "DeepMind", "Google", "Microsoft", "Amazon", "Meta", "NVIDIA", "ASML",
-    "Airbus", "Siemens", "Bosch", "SAP", "Stripe", "Revolut",
-)
-EMPLOYER_NAME = "|".join(map(re.escape, EMPLOYERS))
+from founder_employers import EMPLOYER_ALIASES
+
+
+# Prefer specific employers and full aliases over a shorter prefix like Siemens.
+EMPLOYER_NAME = "|".join(re.escape(name) for name in sorted(EMPLOYER_ALIASES, key=len, reverse=True))
+END_OF_NAME = r"(?![\w'’])"
 EMPLOYMENT = re.compile(
-    rf"\b(?:worked|was employed|spent [\w ]{{1,24}}) (?:at|with)\s+(?P<employer>{EMPLOYER_NAME})\b"
-    rf"|\b(?:formerly|previously)\s+(?:an?\s+[\w -]{{1,36}}\s+)?at\s+(?P<former>{EMPLOYER_NAME})\b"
-    rf"|\b(?:ex[-– ]|ehemals bei\s+|arbeitete bei\s+)(?P<alumni>{EMPLOYER_NAME})\b",
+    rf"\b(?:worked|was employed|spent [\w ]{{1,24}} years?) at\s+(?P<employer>{EMPLOYER_NAME}){END_OF_NAME}"
+    rf"|\b(?:formerly|previously)\s+(?:an?\s+[\w -]{{1,36}}\s+)?at\s+(?P<former>{EMPLOYER_NAME}){END_OF_NAME}"
+    rf"|\b(?:ex[-– ]|ehemals bei\s+|arbeitete (?:zuvor )?bei\s+|war zuvor bei\s+"
+    rf"|a travaillé chez\s+|ancien(?:ne)? de\s+)(?P<alumni>{EMPLOYER_NAME}){END_OF_NAME}"
+    rf"|\bformer\s+(?P<role_employer>{EMPLOYER_NAME})\s+"
+    r"(?:engineer|researcher|trader|developer|scientist|employee|product manager|operator|consultant)\b",
     re.I,
 )
 PRIOR_COMPANY = re.compile(
@@ -35,15 +38,17 @@ def founder_history(title, names, excerpts, url):
                 continue
             for pattern, label in ((EMPLOYMENT, "Previous employer"), (PRIOR_COMPANY, "Previous startup")):
                 match = pattern.search(sentence)
-                if not match or re.search(r"\b(?:never|denied|rumou?red|wants? to|hopes? to)\b", sentence, re.I):
+                if not match or re.search(r"\b(?:never|denied|rumou?red|wants? to|hopes? to|nie|niemals|jamais)\b", sentence, re.I):
                     continue
                 name_start = sentence.casefold().find(named[0].casefold())
                 between = sentence[name_start + len(named[0]):match.start()]
                 if name_start >= match.start() or not re.fullmatch(
-                    r"[, ()]*(?:who |had |has |also |previously )?[, ()]*", between, re.I
+                    r"[, ()]*(?:(?:who|was|is|had|has|also|previously|a|an) ){0,3}[, ()]*", between, re.I
                 ):
                     continue
-                reference = next(value for value in match.groupdict().values() if value).strip(" .")
+                reference = next(value for value in match.groupdict().values() if value)
+                reference = (EMPLOYER_ALIASES[reference.casefold()] if label == "Previous employer"
+                             else reference.strip(" ."))
                 if reference.casefold() == title.casefold().strip():
                     continue
                 key = (label, named[0], reference.casefold())

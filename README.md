@@ -28,7 +28,9 @@ The desk stores its own workflow state. Run `python scout_inbox.py` to refresh i
 In **LinkedIn scouting**, open a targeted search in LinkedIn and save a public founder
 announcement with its permalink and your own summary. The next dashboard or n8n scan
 includes these records under **LinkedIn (analyst submissions)**. This source keeps the
-scout’s assessment distinct from independently verified evidence.
+scout’s assessment distinct from independently verified evidence. The [former-employer
+catalogue and its sources](research/founder-employers.md) power the search presets and
+prior-employer detection.
 
 See the [competitive review, demo sequence, and n8n runbook](research/scout-workflow.md).
 The dossier uses the reviewed, deterministic founder–venture fit and legal registration evidence

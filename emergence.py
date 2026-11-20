@@ -11,6 +11,7 @@ from urllib.parse import urlencode, urlsplit
 from urllib.request import Request, urlopen
 
 from founder_fit import evaluate, review_priority
+from founder_signals import founder_history
 from linkedin_scout import LINKEDIN_SOURCE
 from qualification import detect_intent, merge_candidates, url_key
 from sourcing import positive_int
@@ -125,6 +126,8 @@ def github_record(repo, since):
         "project_url": website if urlsplit(website or "").scheme in {"http", "https"} else None,
         "source_url": url, "sources": [url], "source": "GitHub", "github_activity": signals,
         "links": {"github": [url]}, "claims": claims, "red_flags": flags, "founders": founders,
+        "evidence": founder_history(repo["name"], [person["name"] for person in founders],
+                                    readme.splitlines(), readme_url),
         "location": {"country": country, "confidence": "self_reported" if country else "unknown",
                      "source_url": readme_url if country else None},
         "timeline": [{"date": repo["created_at"], "url": url,

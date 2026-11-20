@@ -4,6 +4,8 @@ from hashlib import sha256
 import re
 from urllib.parse import urlencode, urlsplit
 
+from founder_employers import ALIASES, EMPLOYER_GROUPS
+from founder_signals import founder_history
 from qualification import claim, detect_intent, url_key
 
 
@@ -17,7 +19,6 @@ SIGNALS = {
 SEARCHES = (
     ("Founders building in Germany", '"building a startup" AND (Germany OR Berlin OR München)'),
     ("Teams looking for a co-founder", '("looking for a co-founder" OR "Mitgründer gesucht") AND (Germany OR Deutschland)'),
-    ("Operators starting a venture", '("ex-Goldman Sachs" OR "ex-Jane Street" OR "ex-Siemens") AND (startup OR founder)'),
     ("Repeat founders announcing a venture", '("my second startup" OR "back to building") AND (Germany OR Deutschland)'),
 )
 
@@ -76,7 +77,10 @@ def submitted_post(url, founder, venture, country, signal, note, *, website="", 
         "published_at": posted_on.isoformat() if posted_on else None,
         "location": {"country": country or None, "confidence": "self_reported" if country else "unknown",
                      "source_url": source if country else None},
-        "evidence": [{"signal": PUBLIC_POST, "excerpt": note, "source_url": source}],
+        "evidence": [
+            {"signal": PUBLIC_POST, "excerpt": note, "source_url": source},
+            *founder_history(venture, [founder], [note], source),
+        ],
         "founders": [{"name": founder[:120], "role": "Founder (reported in post)", "source_url": source}],
         "claims": cues + detect_intent(note, source),
         "funding": {"status": "unknown", "rounds": [], "reviews": [], "public_support": []},
@@ -85,16 +89,31 @@ def submitted_post(url, founder, venture, country, signal, note, *, website="", 
     }
 
 
+def linkedin_search(keywords):
+    return "https://www.linkedin.com/search/results/content/?" + urlencode({"keywords": keywords})
+
+
 def render_linkedin(store, countries):
     import streamlit as st
 
     st.header("LinkedIn scouting")
     st.caption("Search public launch and co-founder announcements, then save a sourced lead for review.")
     for column, (title, keywords) in zip(st.columns(2), SEARCHES[:2]):
-        column.link_button(title, "https://www.linkedin.com/search/results/content/?" + urlencode({"keywords": keywords}))
-    with st.expander("Search by founder background"):
+        column.link_button(title, linkedin_search(keywords))
+    with st.expander("Search by former employer"):
+        category, company = st.columns(2)
+        group = category.selectbox("Employer group", list(EMPLOYER_GROUPS), key="employer_group")
+        employer = company.selectbox("Previous employer to search", EMPLOYER_GROUPS[group], key="employer_search")
+        term = f'"{employer}"'
+        if aliases := ALIASES.get(employer):
+            term = f'({term} OR "{aliases[0]}")'
+        st.link_button("Find founding announcements",
+                       linkedin_search(f'{term} AND (founder OR Mitgründer)'))
+        st.link_button("Find co-founder searches",
+                       linkedin_search(f'{term} AND ("looking for a co-founder" OR "Mitgründer gesucht")'))
+        st.caption("Look for posts that name the employer and describe a new venture.")
         for title, keywords in SEARCHES[2:]:
-            st.link_button(title, "https://www.linkedin.com/search/results/content/?" + urlencode({"keywords": keywords}))
+            st.link_button(title, linkedin_search(keywords))
     st.caption("In LinkedIn, use Posts and Date posted to narrow the results.")
     with st.form("linkedin_post_intake", clear_on_submit=True):
         st.subheader("Save a founder announcement")
