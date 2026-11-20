@@ -34,6 +34,11 @@ def _candidate_rows(candidate_data):
     return candidates
 
 
+def _evaluation_candidates(candidate_data, all_candidates=False):
+    candidates = _candidate_rows(candidate_data)
+    return candidates if all_candidates else candidates[:1]
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("candidates", help="JSON object or array from radar.py --json")
@@ -46,12 +51,14 @@ def main(argv=None):
         default="ai_evaluations.json",
         help="Output JSON path (default: ai_evaluations.json); use - for stdout",
     )
+    parser.add_argument("--all-candidates", action="store_true",
+                        help="Evaluate every candidate in the input; may make many paid API calls")
     parser.add_argument("--no-cache", action="store_true", help="Do not read or write the local SQLite cache")
     args = parser.parse_args(argv)
 
     try:
         candidate_data = _read_json(args.candidates)
-        candidates = _candidate_rows(candidate_data)
+        candidates = _evaluation_candidates(candidate_data, args.all_candidates)
 
         investor_profile = _read_json(args.investor_profile) if args.investor_profile else None
         if investor_profile is not None and not isinstance(investor_profile, dict):
