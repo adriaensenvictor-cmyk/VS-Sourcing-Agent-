@@ -15,6 +15,8 @@ from datetime import datetime, timedelta, timezone
 from urllib.parse import urlencode, urlsplit
 from urllib.request import Request, urlopen
 
+from qualification import detect_intent
+
 CITIES = ("Berlin", "Munich", "München", "Hamburg", "Cologne", "Frankfurt", "Germany")
 FOUNDER = r"\b(?:we|our team|my co[- ]founder and I|I)\s+(?:are\s+based|work|live|build|are building|started|launched)\s+(?:out of\s+|in\s+|from\s+)"
 SIGNALS = {
@@ -83,6 +85,7 @@ def assess(post, city):
         "published_at": post["created_at"],
         "source_url": f'https://news.ycombinator.com/item?id={post["objectID"]}',
         "project_url": project_url,
+        "intent_cues": detect_intent(body, f'https://news.ycombinator.com/item?id={post["objectID"]}'),
         "hn_points": points,
         "score": score,
         "evidence": evidence,

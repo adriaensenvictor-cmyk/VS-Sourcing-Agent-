@@ -6,12 +6,14 @@ python3 radar.py --limit 5 --days 365
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from urllib.parse import urlencode, urlsplit
+from urllib.parse import urlencode
 
+from qualification import github_release_events, merge_candidates, public_funding_search, qualify
 from sourcing import positive_int
 
 ROOT = Path(__file__).resolve().parent
@@ -136,21 +138,20 @@ def enrich(lead):
     return lead
 
 
-def project_key(lead):
-    url = urlsplit(lead.get("project_url") or "")
-    host = (url.hostname or "").removeprefix("www.")
-    if host and host not in {"github.com", "linkedin.com", "medium.com", "youtube.com"}:
-        if not url.path.strip("/"):
-            return host
-    return lead["source_url"]
-
-
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--limit", type=positive_int, default=10)
     parser.add_argument("--days", type=positive_int, default=365, help="Show HN lookback window")
     parser.add_argument("--json", action="store_true")
+    parser.add_argument("--source-json", action="append", type=Path, default=[],
+                        help="Import extra university or GitHub leads in the collector JSON format")
+    parser.add_argument("--skip-github-releases", action="store_true",
+                        help="Skip live GitHub enrichment")
+    parser.add_argument("--search-funding", action="store_true", help="Search web funding signals via Brave Search API")
     args = parser.parse_args()
+    api_key = os.environ.get("BRAVE_SEARCH_API_KEY")
+    if args.search_funding and not api_key:
+        parser.error("--search-funding requires BRAVE_SEARCH_API_KEY")
 
     leads = []
     successful = 0
@@ -168,26 +169,38 @@ def main():
                 print(f"{source}: {error}", file=sys.stderr)
             else:
                 successful += 1
+    for path in args.source_json:
+        try:
+            imported = json.loads(path.read_text(encoding="utf-8"))
+            if not isinstance(imported, list) or any(
+                not isinstance(item, dict) or not {"id", "title", "source_url", "evidence"} <= item.keys()
+                for item in imported
+            ):
+                raise ValueError("expected an array of collector leads")
+        except (OSError, ValueError) as error:
+            parser.error(f"{path}: {error}")
+        leads.extend(imported)
+        successful += 1
     if not successful:
         return 1
 
-    ranked = sorted(map(enrich, leads), key=lambda lead: lead["score"], reverse=True)
-    unique = {}
-    for lead in ranked:
-        key = project_key(lead)
-        if key not in unique:
-            lead["sources"] = [lead["source_url"]]
-            unique[key] = lead
-        elif lead["source_url"] not in unique[key]["sources"]:
-            unique[key]["sources"].append(lead["source_url"])
-    results = list(unique.values())[:args.limit]
+    groups = merge_candidates(sorted(map(enrich, leads), key=lambda lead: lead["score"], reverse=True))
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        def evaluate(group):
+            releases = [] if args.skip_github_releases else github_release_events(group)
+            check = public_funding_search(group[0], api_key) if args.search_funding else None
+            return qualify(group, releases, check)
+
+        ranked = list(executor.map(evaluate, groups))
+    ranked.sort(key=lambda lead: (lead["funding"]["status"] != "funded", lead["score"]), reverse=True)
+    results = ranked[:args.limit]
     if args.json:
         print(json.dumps(results, indent=2, ensure_ascii=False))
     elif not results:
         print("No leads matched.")
     else:
         for lead in results:
-            print(f'[{lead["score"]}] {lead["title"]} | {lead["funding_status"]}')
+            print(f'[{lead["score"]}] {lead["title"]} | {lead["funding"]["status"]}')
             print(f'    {lead["source_url"]}')
             for url in lead["linkedin"]["public_links"]:
                 print(f"    LinkedIn: {url}")

@@ -18,6 +18,7 @@ from html.parser import HTMLParser
 from urllib.parse import urljoin, urlsplit
 from urllib.request import Request, urlopen
 
+from qualification import detect_intent
 from sourcing import positive_int
 
 SITE = "https://www.tum-venture-labs.de"
@@ -45,15 +46,19 @@ class TeamPage(HTMLParser):
         self.paragraphs = []
         self.links = []
         self.chunks = []
+        self.fact_label = ""
+        self.founders = []
 
     def handle_starttag(self, tag, attrs):
         if tag == "main":
             self.main_depth += 1
         if not self.main_depth:
             return
-        if tag in {"h1", "p", "li"} and self.section is None:
+        if tag in {"h1", "p", "li", "dt", "dd"} and self.section is None:
             self.section = tag
             self.chunks = []
+        if tag == "br" and self.section == "dd":
+            self.chunks.append(";")
         if tag == "a":
             href = dict(attrs).get("href")
             if href:
@@ -70,6 +75,14 @@ class TeamPage(HTMLParser):
             text = " ".join("".join(self.chunks).split())
             if tag == "h1":
                 self.heading = text
+            elif tag == "dt":
+                self.fact_label = text.casefold()
+            elif tag == "dd":
+                if self.fact_label in {"founder", "founders", "co-founders"}:
+                    self.founders.extend(
+                        name.strip() for name in re.split(r"[;,]|\s+and\s+", text)
+                        if 2 <= len(name.split()) <= 7
+                    )
             elif text:
                 self.paragraphs.append(text)
             self.section = None
@@ -123,6 +136,9 @@ def read_team(entry):
         "funding_status": "unverified",
         "score": score,
         "evidence": signals,
+        "founders": [{"name": name, "role": "Founder", "source_url": url}
+                     for name in dict.fromkeys(page.founders)],
+        "intent_cues": detect_intent(" ".join(page.paragraphs), url),
         "links": links,
     }
 
