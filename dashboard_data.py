@@ -8,6 +8,7 @@ from pathlib import Path
 from discovery_pipeline import campus_record
 from emergence import rank_candidates
 from engine import load_research_snapshot
+from founder_fit import evaluate
 
 ROOT = Path(__file__).resolve().parent
 FUNDING_LABELS = {
@@ -52,6 +53,10 @@ def dashboard_rows(run, *, shortlist_only=False):
     selected = {row["id"] for row in run["shortlist"]}
     rows = run["shortlist"] if shortlist_only else run.get("candidates", run["shortlist"])
     result = []
+    try:
+        as_of = date.fromisoformat(run.get("generated_at", "")[:10])
+    except (TypeError, ValueError):
+        as_of = date.min
     for row in rows:
         funding = row.get("funding") or {}
         status = funding.get("status", "unknown")
@@ -68,6 +73,7 @@ def dashboard_rows(run, *, shortlist_only=False):
             "team": " · ".join(person["name"] for person in founders) or row.get("team") or "",
             "founder_identified": bool(founders or row.get("team")),
             "score": row["founder_emergence_score"],
+            "founder_venture_fit": evaluate([row], as_of),
             "score_components": row.get("emergence_dimensions", {}),
             "funding_status": status,
             "funding_label": FUNDING_LABELS.get(status, FUNDING_LABELS["unknown"]),

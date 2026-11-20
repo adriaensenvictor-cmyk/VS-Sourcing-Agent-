@@ -24,6 +24,18 @@ The Streamlit desk and schedule runner share a local SQLite file. Use one absolu
 
 From the deployed repository, run `python scout_inbox.py --db /absolute/path/to/desk.sqlite3`. The command emits JSON with source outcomes, newly shortlisted count and Watch matches. Two consecutive captures of the same evidence should emit zero new items on the second run. An all-source failure exits 1 and preserves the last usable scan for review. Partial success retains source warnings.
 
+### Local n8n for a laptop demo
+
+Run the dashboard and the scanner from the same Mac when the demo lives at localhost. Their default shared database is `~/.firsttrace/scout-workflow.sqlite3`.
+
+1. Install the dashboard requirements in a repo-local `.venv` or set `FIRSTTRACE_PYTHON` to that environment's Python. Run `./automation/start-local-n8n.sh start` from the repository. The launcher binds n8n to localhost and enables the local Execute Command node for this instance.
+2. Open [the local editor](http://127.0.0.1:5678/), complete the local owner setup if prompted, and open **FirstTrace morning scan (local Mac)**. If the workflow is absent, import the [local template](../automation/n8n-firsttrace-local.json) via the workflow menu.
+3. Select **Run manually** and click **Execute workflow**. Inspect **Read scan result**. Reload the dashboard in **Live discovery** to see the latest scan and check **New since review**. Publish the workflow to enable the weekday schedule. Scheduled runs require n8n to remain running and the laptop to be awake.
+
+[n8n npm setup](https://docs.n8n.io/deploy/host-n8n/install-options/install-with-npm.md) · [Execute Command node](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.executecommand/)
+
+### n8n Cloud with a hosted scanner
+
 Import the [inactive n8n template](../automation/n8n-firsttrace.json) or configure the workflow manually. Replace the sample checkout and database paths and choose a dedicated SSH credential. The template schedules weekdays at 08:00 Berlin time once enabled.
 
 1. **Manual Trigger** for the first two validation runs. Add **Schedule Trigger**, e.g. 08:00 Europe/Berlin on weekdays, once the runner is reachable and the output is stable.

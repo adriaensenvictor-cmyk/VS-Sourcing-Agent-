@@ -23,6 +23,10 @@ def reported_stage(item):
 def evidence_text(item, profile):
     """Present source-backed extracts with the shared payload kept intact."""
     yield from profile.get("dated_signals", [])
+    for fact in item["founder_venture_fit"]["evidence"]:
+        yield {"signal": "Reviewed · " + fact["criterion"].replace("_", " "),
+               "excerpt": fact["text"], "url": fact["source_url"],
+               "observed_at": fact.get("date")}
     for evidence in item.get("evidence", []):
         yield {**evidence, "url": evidence.get("source_url")}
     for event in item.get("timeline", []):
@@ -75,7 +79,7 @@ def render_dossier(item, store, saved, notices):
     description = item.get("description") or "Description unavailable."
     st.text(description[:550] + ("…" if len(description) > 550 else ""))
     a, b = st.columns([1, 2])
-    a.metric("Review score", f'{item["score"]}/100')
+    a.metric("Early signal score", f'{item["score"]}/100')
     b.caption("Funding assessment")
     b.write(item["funding_label"])
     if (stage := reported_stage(item)) not in ("Unverified", "Round reported · stage unclear"):
@@ -88,11 +92,17 @@ def render_dossier(item, store, saved, notices):
     else:
         st.caption("German operating base needs confirmation.")
     formed = formation_record(item, profile)
+    eligibility = item["founder_venture_fit"]["three_year_eligibility"]
     if formed:
-        st.caption(f"Founding or registration · {formed.value}")
+        label = "Legal registration" if eligibility.get("formation_date") else "Reported founding or registration"
+        st.caption(f"{label} · {formed.value}")
         link("Formation evidence", formed.source)
     else:
         st.caption("Company age is unverified. The timeline measures public evidence.")
+        if eligibility.get("evidence"):
+            st.caption(eligibility["reason"])
+        if eligibility["university_review"]:
+            st.caption("University project · review formation separately.")
     first_seen = store.first_seen(item["id"]) if item["mode"] == "live" else None
     if first_seen:
         st.caption(f"First seen by this desk · {first_seen[:10]} UTC")
@@ -160,7 +170,19 @@ def render_dossier(item, store, saved, notices):
         st.download_button("Download sourced call brief", outline, "firsttrace-call-brief.md", "text/markdown")
         render_brief({**item, "evidence": evidence})
     with scoring:
-        st.json(item["score_components"], expanded=True)
+        fit = item["founder_venture_fit"]
+        st.subheader("Founder–venture fit")
+        st.write(fit["assessment"])
+        st.caption(fit["coverage"])
+        for column, (key, label) in zip(st.columns(2), (("founder", "Founder potential"), ("venture", "Venture potential"))):
+            axis = fit[key]
+            score = axis["score"]
+            column.metric(label, "Unknown" if score is None else f"{score}/100")
+            for marker, fields in (("Verify", axis["missing"]), ("Conflicting", axis["conflicts"])):
+                if fields:
+                    column.caption(marker + " · " + ", ".join(field.replace("_", " ") for field in fields))
+        with st.expander("Early signal score breakdown"):
+            st.json(item["score_components"], expanded=True)
         st.caption(f'Evidence confidence · {item["evidence_confidence"]}/10')
         for check in item["funding"]["reviews"]:
             if check.get("scope"):

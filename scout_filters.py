@@ -72,6 +72,14 @@ def web_source(value):
 
 def formation_record(item, profile=None):
     """Return a sourced founding/registration date, retaining year precision."""
+    eligibility = (item.get("founder_venture_fit") or {}).get("three_year_eligibility") or {}
+    if legal_date := eligibility.get("formation_date"):
+        source = next((fact["source_url"] for fact in eligibility["evidence"]
+                       if fact.get("date") == legal_date and web_source(fact.get("source_url"))), None)
+        if source:
+            return Formation(date.fromisoformat(legal_date), source)
+    if eligibility.get("evidence"):
+        return None
     profile = profile or {}
     source = profile.get("founded_source")
     if web_source(source):
