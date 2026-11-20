@@ -9,8 +9,10 @@ from pathlib import Path
 import sqlite3
 from urllib.parse import urlsplit
 
+from founder_signals import HISTORY_LABELS
 
-WATCH_FOR = ("Any sourced change", "Customer or pilot", "Disclosed equity")
+
+WATCH_FOR = ("Any sourced change", "Customer or pilot", "Disclosed equity", "Founder track record")
 DECISIONS = ("Meet", "Watch", "Pass")
 
 
@@ -38,6 +40,12 @@ def observations(lead):
     for event in lead.get("timeline", []):
         if event.get("date") and event.get("public_signal", True) and valid_url(event.get("url")):
             yield "Public milestone", event["url"], event["date"], event["label"]
+    for evidence in lead.get("evidence", []):
+        if (evidence.get("signal") in HISTORY_LABELS and evidence.get("subject")
+                and evidence.get("reference") and valid_url(evidence.get("source_url"))):
+            subject = evidence["subject"]
+            reference = evidence["reference"]
+            yield "Founder track record", evidence["source_url"], "", f"{subject} · {reference}"
     for claim in lead.get("claims", []):
         if claim.get("status") == "verified" and claim.get("type") in {"pilot", "customer_discovery", "commercialization"}:
             if valid_url(claim.get("source_url")):
@@ -118,7 +126,7 @@ class ScoutInbox:
                     report["new_leads"] += 1
                 decision = db.execute("SELECT * FROM decisions WHERE scope = 'live' AND lead_id = ?", (key,)).fetchone()
                 for kind, url, date, detail in observations(lead):
-                    fingerprint = sha256(json.dumps([kind, url, date, detail if kind == "Public milestone" else ""]).encode()).hexdigest()
+                    fingerprint = sha256(json.dumps([kind, url, date, detail if kind in {"Public milestone", "Founder track record"} else ""]).encode()).hexdigest()
                     inserted = db.execute("INSERT OR IGNORE INTO evidence VALUES (?, ?, ?)",
                                           (key, fingerprint, captured_at)).rowcount
                     if inserted and decision and decision["decision"] == "Watch" and decision["watch_for"] in (kind, WATCH_FOR[0]):

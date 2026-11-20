@@ -5,6 +5,7 @@ from urllib.parse import urlsplit
 
 import streamlit as st
 
+from founder_signals import track_record
 from profile_evidence import profile_for, SOURCE_GUIDE
 from scout_filters import formation_record, funding_stage
 from scout_inbox import DECISIONS, WATCH_FOR, valid_url
@@ -134,6 +135,12 @@ def render_dossier(item, store, saved, notices):
 
     overview, timeline, brief, scoring = st.tabs(["People & diligence", "Evidence", "Analyst brief", "Scoring"])
     with overview:
+        if history := track_record(item):
+            st.subheader("Founder track record")
+            for index, record in enumerate(history, start=1):
+                st.text(f'{record["subject"]} · {record["signal"]} · {record["reference"]}')
+                st.text(record["excerpt"])
+                link(f"Founder history source {index}", record.get("source_url") or record.get("url"))
         for person in profile.get("founders") or item.get("founders") or []:
             st.text(person["name"] + (f' · {person["role"]}' if person.get("role") else ""))
             link(f'{person["name"]} · founder evidence', person.get("source_url"))

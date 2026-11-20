@@ -2,7 +2,7 @@
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
 
-from emergence import DISCOVERY_SOURCES, discover_github, rank_candidates, university_lead
+from emergence import DISCOVERY_SOURCES, PROGRAMME_SOURCES, discover_github, rank_candidates, university_lead
 from qualification import detect_intent
 from radar import collect, rank_rows
 
@@ -50,6 +50,12 @@ def source_result(loader):
                   "warnings": list(dict.fromkeys(warnings))}
 
 
+def load_programme(index, warnings):
+    from programmes import scan_baystartup, scan_imec, scan_unternehmertum
+
+    return (scan_unternehmertum, scan_imec, scan_baystartup)[index](warnings)
+
+
 def run_discovery(sources=DISCOVERY_SOURCES, days=365, *, github_limit=5, limit=10, api_key=None):
     """Collect independently, retain source diagnostics, and let PR #3 rank."""
     loaders = {
@@ -58,10 +64,13 @@ def run_discovery(sources=DISCOVERY_SOURCES, days=365, *, github_limit=5, limit=
             "sourcing.py", "--days", str(days), "--limit", "100", warnings=warnings,
         ),
         "TU Berlin": load_campus,
+        PROGRAMME_SOURCES[0]: lambda warnings: load_programme(0, warnings),
+        PROGRAMME_SOURCES[1]: lambda warnings: load_programme(1, warnings),
+        PROGRAMME_SOURCES[2]: lambda warnings: load_programme(2, warnings),
     }
     rows = []
     status = {}
-    with ThreadPoolExecutor(max_workers=3) as executor:
+    with ThreadPoolExecutor(max_workers=5) as executor:
         jobs = {name: executor.submit(source_result, loader)
                 for name, loader in loaders.items() if name in sources}
         for name, job in jobs.items():

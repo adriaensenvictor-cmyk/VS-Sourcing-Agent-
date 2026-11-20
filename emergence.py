@@ -13,7 +13,9 @@ from urllib.request import Request, urlopen
 from qualification import detect_intent, merge_candidates, url_key
 from sourcing import positive_int
 
-DISCOVERY_SOURCES = ("TUM Venture Labs", "Show HN", "GitHub", "TU Berlin")
+CORE_DISCOVERY_SOURCES = ("TUM Venture Labs", "Show HN", "GitHub", "TU Berlin")
+PROGRAMME_SOURCES = ("UnternehmerTUM Incubator", "imec.istart", "BayStartUP roster")
+DISCOVERY_SOURCES = CORE_DISCOVERY_SOURCES + PROGRAMME_SOURCES
 
 EXIST = "https://portal.mytum.de/jobs/wissenschaftler/NewsArticle_20260806_092633/newsarticle_view"
 EUROPE = ("Germany", "France", "Netherlands", "Switzerland", "Austria", "Belgium",
@@ -331,7 +333,7 @@ def main():
     key = os.getenv("BRAVE_SEARCH_API_KEY") if args.search_funding else None
     if args.search_funding and not key:
         parser.error("--search-funding requires BRAVE_SEARCH_API_KEY")
-    sources = DISCOVERY_SOURCES if args.tu_berlin else DISCOVERY_SOURCES[:-1]
+    sources = DISCOVERY_SOURCES if args.tu_berlin else tuple(name for name in DISCOVERY_SOURCES if name != "TU Berlin")
     run = run_discovery(sources, args.days, github_limit=args.github_limit, limit=args.limit, api_key=key)
     print(json.dumps(run, ensure_ascii=False, indent=2))
     return int(all(status["state"] == "error" for status in run["source_status"].values()))

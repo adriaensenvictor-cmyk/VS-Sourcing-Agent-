@@ -44,6 +44,18 @@ class InboxTests(TestCase):
         self.assertEqual(self.store.first_seen(LEAD["id"]), "2026-11-15T17:00:00+00:00")
         self.assertEqual(ScoutInbox(self.path).decisions("live")[LEAD["id"]]["owner"], "Scout")
 
+    def test_founder_watch_matches_attributed_history_once(self):
+        self.store.record(capture(15))
+        first = self.store.inbox()[0]
+        self.store.decide("live", LEAD["id"], "Watch", "Scout", "Check earlier venture",
+                          "Founder track record", through=first["id"])
+        history = {"signal": "Previous startup", "source_url": URL, "subject": "Alex Doe",
+                   "reference": "Skylark", "excerpt": "Alex Doe previously founded Skylark."}
+        updated = {**LEAD, "evidence": [history]}
+        self.assertEqual(self.store.record(capture(16, updated))["watch_matches"], 1)
+        self.assertEqual(self.store.record(capture(17, updated))["watch_matches"], 0)
+        self.assertEqual(self.store.inbox()[0]["detail"], "Alex Doe · Skylark")
+
     def test_new_shortlist_membership_and_last_working_capture(self):
         self.assertEqual(self.store.record(capture(15, shortlisted=False))["new_leads"], 0)
         self.assertEqual(self.store.record(capture(16))["new_leads"], 1)

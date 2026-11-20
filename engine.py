@@ -239,19 +239,26 @@ def scan_github(days=365, limit=24, token=None):
 
 
 def scan_campus(max_profiles=12, *, warnings=None):
-    """Discover TU Berlin 2026 ventures from links on the university directory.
+    """Discover recent venture cohorts from links on the TU Berlin directory.
 
     Do not fabricate results if TU Berlin blocks automated requests.
-    2026 is the university listing cohort, not an independently verified founding date.
+    The university listing year does not establish a legal founding date.
     """
     soup = get_html(CAMPUS_URL)
     links = {}
-    for link in soup.select('a[href*="startups-2026-"]'):
+    current_year = utcnow().year
+    for link in soup.select('a[href*="startups-"]'):
         href = urljoin(CAMPUS_URL, link.get("href", ""))
-        if urlparse(href).hostname in {"www.tu.berlin", "tu.berlin"} and "startups-2026-" in href:
-            links[href] = True
+        parsed = urlparse(href)
+        match = re.search(r"/startups-(20\d{2})-[^/]+/?$", parsed.path)
+        if match and parsed.hostname in {"www.tu.berlin", "tu.berlin"}:
+            year = int(match[1])
+            if current_year - 2 <= year <= current_year:
+                links.setdefault(href, year)
+    if not links:
+        raise ValueError("No recent TU Berlin cohort links could be read")
     leads = []
-    for url in list(links)[:max_profiles]:
+    for url in sorted(links, key=links.get, reverse=True)[:max_profiles]:
         try:
             page = get_html(url)
         except requests.RequestException as error:
@@ -262,15 +269,16 @@ def scan_campus(max_profiles=12, *, warnings=None):
         name = h1.get_text(" ", strip=True) if h1 else url.rsplit("-", 1)[-1].title()
         for t in page(["script", "style", "nav", "footer"]):
             t.decompose()
-        body = " ".join(page.get_text(" ", strip=True).split())
+        sections = page.select(".ce-bodytext")
+        content = next((section for section in sections if "Team:" in section.get_text(" ", strip=True)), page)
+        body = " ".join(content.get_text(" ", strip=True).split())
         if NOISE.search(name):
             continue
         # Site profiles explicitly expose the "Team:" and "Förderung:" sections.
         match = re.search(r"\bTeam:\s*(.{4,260}?)\s*(?:Branche:|Mentor:|Fakultät:|Förderung:)", body, re.I)
         team = match.group(1)[:230] if match else ""
         grant = re.search(r"\bEXIST[- ](?:Gründungsstipendium|Gründerstipendium)\b", body, re.I)
-        ev = [evidence("University startup directory (2026 cohort)", name,
-                       url)]
+        ev = [evidence(f"University startup directory ({links[url]} cohort)", name, url)]
         if team:
             ev.append(evidence("Named team on university profile", team, url))
         if grant:
@@ -278,7 +286,7 @@ def scan_campus(max_profiles=12, *, warnings=None):
         leads.append(candidate("campus:" + url.rsplit("/", 1)[-1], name,
                     "TU Berlin", url, body[:1800], "Berlin, Germany",
                     team=team, evidence_items=ev, founder_identified=bool(team),
-                    cohort="University listing: 2026"))
+                    cohort=f"University listing: {links[url]}"))
     return deduplicate(leads)
 
 

@@ -30,6 +30,11 @@ The dossier uses the reviewed, deterministic founder–venture fit and legal reg
 from [Victor's PR #6](https://github.com/adriaensenvictor-cmyk/VS-Sourcing-Agent-/pull/6).
 Those checks inform diligence and age filtering. The discovery engine still supplies the queue order.
 
+Live discovery also reads UnternehmerTUM Incubator, imec.istart and the BayStartUP
+2026 competition roster. Open **All locations** to review records that lack location
+evidence. See [source coverage and founder signals](research/incubator-coverage.md)
+for limits and additional programmes.
+
 ## Run the engine and tests
 
 ```sh

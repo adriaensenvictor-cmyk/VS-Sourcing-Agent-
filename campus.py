@@ -18,6 +18,7 @@ from html.parser import HTMLParser
 from urllib.parse import urljoin, urlsplit
 from urllib.request import Request, urlopen
 
+from founder_signals import founder_history
 from qualification import detect_intent
 from sourcing import positive_int
 
@@ -125,6 +126,8 @@ def read_team(entry):
         for platform, domain in (("github", "github.com"), ("linkedin", "linkedin.com")):
             if (host == domain or host.endswith("." + domain)) and link not in links[platform]:
                 links[platform].append(link)
+    signals.extend(founder_history(page.heading, list(dict.fromkeys(page.founders)),
+                                   page.paragraphs, url))
     return {
         "id": f"tum:{url.rstrip('/').rsplit('/', 1)[-1]}",
         "title": page.heading,

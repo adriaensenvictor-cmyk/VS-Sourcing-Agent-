@@ -7,6 +7,7 @@ import streamlit as st
 from dashboard_data import dashboard_rows, export_csv, export_json, load_demo_run
 from discovery_pipeline import run_discovery
 from emergence import DISCOVERY_SOURCES
+from founder_signals import track_record
 from historical_replay import render_replay
 from profile_evidence import profile_for
 from scout_desk import render_dossier, render_sources, reported_stage
@@ -41,7 +42,7 @@ div[data-testid="stTabs"] [role="tablist"] {overflow-x:auto}
 def open_queued_lead(lead_id):
     st.session_state.update(workspace="Screening", data_mode=LIVE_MODE, lead=lead_id,
                             geography=ANYWHERE, company_age="Any age", query="",
-                            funding=[], stages=[], sectors=[], **{"shortlist-Live discovery": False,
+                            funding=[], stages=[], sectors=[], founder_history_filter="Any background", **{"shortlist-Live discovery": False,
                             "watch-Live discovery": False, "review_score": 0})
 
 
@@ -136,6 +137,8 @@ with st.expander("Funding, sector and review filters"):
     limits = st.multiselect("Funding", ["Unknown · verification required", "No public round found in scoped review", "Funding round reported"], key="funding")
     stage_options = sorted({reported_stage(row) for row in dashboard_rows(outcome)})
     stages = st.multiselect("Reported funding stage", stage_options, key="stages")
+    founder_filter = st.selectbox("Founder history", ["Any background", "Previous employer", "Previous startup"],
+                                  key="founder_history_filter")
     minimum = st.slider("Minimum review score", 0, 100, step=1, key="review_score")
 
 decisions = store.decisions(outcome["mode"])
@@ -151,6 +154,9 @@ for item in rows:
     if (limits and item["funding_label"] not in limits) or (stages and reported_stage(item) not in stages):
         continue
     if sectors and item["sector"] not in sectors:
+        continue
+    if founder_filter != "Any background" and not any(
+            entry["signal"] == founder_filter for entry in track_record(item)):
         continue
     if query and query not in " ".join([item["name"], item["team"], item["sector"]]).casefold():
         continue
