@@ -3,221 +3,193 @@ import csv
 import io
 import json
 import os
-import re
 from datetime import datetime, timezone
-from urllib.parse import urlparse
 
 import streamlit as st
 from engine import load_research_snapshot, run_live
 
-def funding_stage(status):
-    """Group explicit round labels for display while preserving the source wording."""
-    text = (status or "").casefold()
-    if not text or re.search(r"unknown|unverified|not verified|not confirmed|no funding found|no equity|seeking|planned|targeting", text):
-        return "Unverified"
-    if re.search(r"\bpre[ -]seed\b", text):
-        return "Pre-seed"
-    match = re.search(r"\bseries[ -]([a-z])\b", text)
-    if match:
-        return {"a": "Series A", "b": "Series B"}.get(match[1], "Series C+")
-    if re.search(r"\bseed\b", text):
-        return "Seed"
-    if re.search(r"\bgrowth\b", text):
-        return "Growth"
-    return "Other / review"
+from scout_dossier import render_dossier, render_sources
+from profile_evidence import profile_for
+from scout_filters import (
+    ALL_EUROPE, FUNDING_STAGES, GERMANY, REGIONS, age_fit, formation_record,
+    lead_stage, location_region, region_matches,
+)
 
 
-def evidence_date(value):
-    """Parse ISO evidence dates without guessing from text or using today's date."""
-    try:
-        parsed = datetime.fromisoformat((value or "").replace("Z", "+00:00"))
-    except (ValueError, AttributeError):
-        return None
-    return parsed.replace(tzinfo=timezone.utc) if parsed.tzinfo is None else parsed
+st.set_page_config(page_title="FirstTrace · Scout desk", page_icon="🌱", layout="wide")
 
-
-def safe_url(value):
-    try:
-        parsed = urlparse(value or "")
-        return value if parsed.scheme in {"http", "https"} and parsed.hostname else None
-    except (ValueError, AttributeError):
-        return None
-
-
-st.set_page_config(page_title="FirstTrace | HTGF Scout", layout="wide")
 st.markdown("""
 <style>
-[data-testid="stMainBlockContainer"] {max-width:1240px;padding-top:2.1rem}
-.firsttrace-hero {background:linear-gradient(115deg,#112c25,#205244);color:#f5fff8;
-                 border-radius:1.25rem;padding:clamp(1.25rem,4vw,3rem);margin-bottom:1rem}
-.firsttrace-hero h1 {color:#fff;font-size:clamp(2.2rem,6vw,4.25rem);
-                    letter-spacing:-.045em;line-height:1.05;margin:.35rem 0 .75rem;padding:0}
-.firsttrace-hero p {color:#d6eadd;margin:0}
-.firsttrace-hero .desk {font-size:.8rem;letter-spacing:.075em;text-transform:uppercase}
-div[data-testid="stMetric"] {border:1px solid rgba(78,118,97,.28);border-radius:.75rem;padding:.7rem}
+[data-testid="stMainBlockContainer"] {max-width:1370px;padding-top:2rem}
+.desk-hero {background:#0a3431;border-radius:18px;position:relative;overflow:hidden;
+  isolation:isolate;color:#fcfaf4;padding:clamp(1.3rem,2.4vw,2rem);margin-bottom:.8rem}
+.desk-hero::after {content:"";position:absolute;z-index:-1;right:-5rem;top:-12rem;
+  width:32rem;height:32rem;border-radius:50%;
+  background:repeating-radial-gradient(circle,transparent 0 19px,#43857b 20px 21px,transparent 22px 29px);
+  mask-image:linear-gradient(90deg,transparent,black)}
+.desk-brand {font-weight:700;font-size:.9rem;letter-spacing:.02em;color:#bdeedb}
+.desk-hero h1 {color:#fff9ee;font-family:Georgia,serif;font-weight:500;
+  font-size:clamp(2.3rem,5vw,4.2rem);line-height:1.06;letter-spacing:-.045em;margin:.55rem 0;padding:0}
+.desk-hero p {margin:0;color:#def2eb;max-width:38rem}
+.company {display:flex;align-items:center;gap:.85rem;margin:.5rem 0 .85rem}
+.company h2 {font-family:Georgia,serif;font-weight:500;font-size:clamp(1.75rem,3vw,2.7rem);
+  line-height:1.1;padding:0;letter-spacing:-.035em}
+.company p {margin:.25rem 0 0;font-size:.9rem}
+.company-mark {height:3.8rem;width:3.8rem;flex:none;position:relative;border-radius:14px;
+  background:#e2efe8;color:#10483c;overflow:hidden;display:grid;place-items:center}
+.company-initials {font-weight:700;font-size:1.35rem}
+.company-mark img {position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:.4rem;background:white}
+.vc-stages {display:flex;flex-wrap:wrap;gap:.35rem;padding:0!important;margin:.7rem 0 .2rem!important}
+.vc-stages li {list-style:none;margin:0!important;font-size:.75rem;line-height:1.2;
+  padding:.4rem .55rem;border-top:3px solid #879b95}
+.vc-stages .current {border-color:#18735d;background:#d2f6de;color:#113d33;font-weight:bold}
+div[data-testid="stMetric"] {border:1px solid rgba(110,135,122,.4);border-radius:12px;padding:.6rem .8rem}
+div[data-testid="stTabs"] [role="tablist"] {overflow-x:auto}
+@media(max-width:680px){.desk-hero::after{opacity:.45;right:-16rem}.desk-hero{padding:1.4rem}}
 </style>
-<div class="firsttrace-hero">
-  <p class="desk">FirstTrace · HTGF sourcing desk</p>
-  <h1>Find the founders early.</h1>
-  <p>Review startup signals, compare evidence and decide who to meet.</p>
-</div>
+<header class="desk-hero">
+<div class="desk-brand">FirstTrace / HTGF</div>
+<h1>Scout desk</h1>
+<p>Find the first trace, open the evidence, and decide which founders to meet.</p>
+</header>
 """, unsafe_allow_html=True)
 
 with st.sidebar:
     st.header("Discovery settings")
-    mode = st.radio("Data mode", ["Live discovery", "Verified research snapshot"],
-                    help="Snapshot cases are manually researched examples, NOT automatic discoveries.")
-    sources = st.multiselect("Public sources", ["Campus", "Hacker News", "GitHub"],
-                             default=["Campus", "Hacker News", "GitHub"],
-                             disabled=mode != "Live discovery")
-    days = st.slider("Lookback window (days)", 30, 365, 180, step=30)
-    minimum = st.slider("Minimum review score", 0, 100, 0, step=5)
-    token = os.environ.get("GITHUB_TOKEN", "")
-    st.caption("Optional GITHUB_TOKEN environment variable increases API allowance. Never paste keys into a public demo.")
-    run = st.button("🔎 Run sourcing engine", type="primary", use_container_width=True)
-    st.divider()
-    st.caption("Scoring is rules-based and auditable. Human funding and company checks remain mandatory.")
+    mode = st.radio("Data mode", ["Verified research snapshot", "Live discovery"],
+                    help="The snapshot contains manually researched cases. Live discovery queries public sources.")
+    live_mode = mode == "Live discovery"
+    if live_mode:
+        sources = st.multiselect("Public sources", ["Campus", "Hacker News", "GitHub"],
+                                 default=["Campus", "Hacker News", "GitHub"])
+        days = st.slider("Lookback window (days)", 30, 365, 180, step=30)
+        run = st.button("Run sourcing engine", type="primary", disabled=not sources)
+    minimum = st.slider("Minimum review score", 0, 100, step=5, key="min_score")
 
 @st.cache_data(ttl=900, show_spinner=False)
-def cached_live(which, days, has_token, token_value):
-    return run_live(which, days, token_value if has_token else None)
+def cached_live(which, days, token):
+    return run_live(which, days, token or None)
 
-if ("leads" not in st.session_state or run
-    or (mode == "Verified research snapshot" and st.session_state.get("scanned_mode") != mode)):
-    if mode == "Verified research snapshot":
-        st.session_state["leads"] = load_research_snapshot()
-        st.session_state["errors"] = []
-        st.session_state["scanned_mode"] = "Verified research snapshot"
-    elif run:
-        with st.spinner("Checking public early signals..."):
-            items, errors = cached_live(tuple(sources), days, bool(token), token)
-        st.session_state["leads"] = items
-        st.session_state["errors"] = errors
-        st.session_state["scanned_mode"] = "Live discovery"
+if live_mode:
+    if run:
+        with st.spinner("Checking public early signals…"):
+            st.session_state["live_scan"] = cached_live(tuple(sources), days, os.environ.get("GITHUB_TOKEN", ""))
+    candidates, errors = st.session_state.get("live_scan", ([], []))
+    if "live_scan" not in st.session_state:
+        st.info("Select public sources in the sidebar and run the sourcing engine.")
     else:
-        st.session_state["leads"] = []
-        st.session_state["errors"] = []
-        st.session_state["scanned_mode"] = "Not scanned"
-
-scanned_mode = st.session_state["scanned_mode"]
-candidates = st.session_state["leads"]
-errors = st.session_state.get("errors", [])
-st.caption(f"Data mode: {scanned_mode} · Scores prioritize review. Grants and equity are tracked separately.")
-if scanned_mode == "Verified research snapshot":
-    st.info("Reference snapshot · Manually researched cases collected on 20 Nov 2026.")
-elif scanned_mode == "Not scanned":
-    st.write("Run discovery from the sidebar, or choose the research snapshot for an offline walkthrough.")
+        st.caption("Live discovery · Results from your last scan")
+else:
+    candidates = load_research_snapshot()
+    errors = []
+    st.caption("Research snapshot · Manually researched public records · 20 Nov 2026")
 for err in errors:
     st.error(f"Source unavailable: {err}")
 
 leads = []
 if candidates:
     st.subheader("Lead inbox")
-    search = st.text_input("Search leads", placeholder="Search companies, founders or locations")
-    sectors, stages = st.columns(2)
-    with sectors:
-        sector_filter = st.multiselect("Sectors", sorted({x["sector"] for x in candidates}))
-    with stages:
-        funding_filter = st.multiselect("Funding stages", [
-            "Pre-seed", "Seed", "Series A", "Series B", "Series C+",
-            "Growth", "Other / review", "Unverified",
-        ])
+    regions, ages = st.columns(2)
+    region_filter = regions.selectbox(
+        "Geography", REGIONS, key="inbox_region",
+        help="Uses the reported company or team location. An owner profile or university affiliation alone leaves the location unverified.",
+    )
+    age_options = {"Up to 3 years": 3, "Up to 2 years": 2, "Any age": None}
+    age_filter = ages.selectbox("Company age", list(age_options), key="inbox_age",
+                                help="Uses a sourced founding or registration date. Grants and first public signals do not establish age.")
+    include_unknown = st.checkbox("Include companies with unverified age", key="inbox_unknown_age",
+                                  disabled=age_options[age_filter] is None)
+    search = st.text_input("Search leads", placeholder="Company, team or location", key="inbox_query")
+    with st.expander("Sector and funding stage"):
+        sectors, stages = st.columns(2)
+        sector_filter = sectors.multiselect("Sectors", sorted({x["sector"] for x in candidates}), key="inbox_sector")
+        funding_filter = stages.multiselect("Funding stages", FUNDING_STAGES, key="inbox_stage",
+                                            help="Unverified includes teams with only grant evidence or no confirmed round.")
+    today = datetime.now(timezone.utc).date()
+    unknown_age_count = 0
+    terms = search.casefold().split()
     for item in candidates:
+        profile = profile_for(item)
+        region = location_region(item, profile)
         searchable = " ".join(str(item.get(key) or "") for key in (
             "name", "team", "sector", "location", "origin", "description",
         )).casefold()
-        if (item["score"] >= minimum
-            and all(word in searchable for word in search.casefold().split())
-            and (not sector_filter or item["sector"] in sector_filter)
-            and (not funding_filter or funding_stage(item.get("funding_status")) in funding_filter)):
-            leads.append(item)
-    st.caption(f"{len(leads)} of {len(candidates)} leads match your filters")
+        if (item["score"] < minimum or not all(word in searchable for word in terms)
+            or not region_matches(region, region_filter)
+            or (sector_filter and item["sector"] not in sector_filter)
+            or (funding_filter and lead_stage(item, profile) not in funding_filter)):
+            continue
+        if age_options[age_filter] is not None:
+            fits = age_fit(formation_record(item, profile), age_options[age_filter], today)
+            if fits is None:
+                unknown_age_count += 1
+            if fits is False or (fits is None and not include_unknown):
+                continue
+        leads.append(item)
+    if region_filter == ALL_EUROPE:
+        leads.sort(key=lambda item: location_region(item, profile_for(item)) != GERMANY)
+    count_message = f"Showing {len(leads)} of {len(candidates)} companies"
+    if unknown_age_count:
+        action = "included" if include_unknown else "hidden"
+        count_message += f" · {unknown_age_count} with unverified age {action}"
+    st.caption(count_message)
 
+def clear_inbox_filters():
+    st.session_state.update(inbox_region="All locations", inbox_age="Any age", inbox_query="",
+                            inbox_sector=[], inbox_stage=[], show_shortlist=False, min_score=0)
+
+
+item = None
 if leads:
     queue, details = st.columns([2, 3], gap="large")
     with queue:
-        st.subheader("Opportunities")
-        by_id = {lead["id"]: lead for lead in leads}
-        selection = st.selectbox("Select a startup", list(by_id),
-                                 format_func=lambda key: f'{by_id[key]["name"]} · {by_id[key]["score"]}/100')
-        st.dataframe([
-            {"Project": x["name"], "Score": x["score"], "Funding": funding_stage(x.get("funding_status"))}
-            for x in leads
-        ], hide_index=True, use_container_width=True)
-    with details:
-        item = by_id[selection]
-        st.header(item["name"])
-        score, funding = st.columns([1, 2])
-        score.metric("Review score", f'{item["score"]}/100')
-        funding.caption("Funding status")
-        funding.write(item.get("funding_status") or "Unverified")
-        st.caption(f'{item["sector"]} · {item["location"]} · {item["origin"]}')
-        st.write(item["description"][:1300])
-        st.write(f'**Founding team** · {item["team"] or "Unverified"}')
-        for label, key in (("Open project", "project_url"), ("Open discovery source", "source_url")):
-            if url := safe_url(item.get(key)):
-                st.link_button(label, url)
+        st.subheader("Screening queue")
+        selected_ids = st.session_state.setdefault("shortlisted", set())
+        only_saved = st.checkbox("Shortlisted only", key="show_shortlist")
+        visible = [lead for lead in leads if not only_saved or lead["id"] in selected_ids]
+        if visible:
+            by_id = {lead["id"]: lead for lead in visible}
+            if st.session_state.get("selected_lead") not in by_id:
+                st.session_state["selected_lead"] = next(iter(by_id))
+            if len(by_id) <= 8:
+                selection = st.radio("Open a dossier", list(by_id), key="selected_lead",
+                                     format_func=lambda key: by_id[key]["name"],
+                                     captions=[f'{x["score"]}/100 · {lead_stage(x, profile_for(x))}' +
+                                               (" · Shortlisted" if x["id"] in selected_ids else "") for x in visible])
+            else:
+                selection = st.selectbox("Open a dossier", list(by_id), key="selected_lead",
+                                         format_func=lambda key: f'{by_id[key]["name"]} · {by_id[key]["score"]}/100')
+            item = by_id[selection]
+            saved = selection in selected_ids
+            if st.button("Remove from shortlist" if saved else "Add to shortlist",
+                         key=f"save-{selection}"):
+                if saved:
+                    selected_ids.discard(selection)
+                else:
+                    selected_ids.add(selection)
+                st.rerun()
+            st.caption("Your shortlist is saved for this browser session.")
+            with st.expander("Export this queue"):
+                st.caption("These exports contain the original sourcing records. Curated profile checks appear in the dossier below.")
+                st.download_button("Lead dossiers (JSON)", data=json.dumps(visible, ensure_ascii=False, indent=2),
+                                   file_name="hidden_gem_leads.json", mime="application/json")
+                buffer = io.StringIO()
+                writer = csv.DictWriter(buffer, fieldnames=["name", "sector", "location", "origin",
+                    "score", "lead_status", "funding_status", "source_url", "project_url"])
+                writer.writeheader()
+                for lead in visible:
+                    writer.writerow({k: lead.get(k, "") for k in writer.fieldnames})
+                st.download_button("Screening queue (CSV)", data=buffer.getvalue(),
+                                   file_name="hidden_gem_leads.csv", mime="text/csv")
+        else:
+            st.info("Your shortlist has no matches here. Turn off Shortlisted only to review the full queue.")
+    if item:
+        with details:
+            render_dossier(item)
+elif candidates:
+    st.info("No companies match this combination. Widen the region or age range, or clear a filter.")
+    st.button("Review all source hits", on_click=clear_inbox_filters)
+elif live_mode and "live_scan" in st.session_state:
+    st.info("This scan returned no leads. Try another source or lookback window.")
 
-        timeline, scoring, diligence = st.tabs(["Evidence timeline", "Score breakdown", "Diligence"])
-        with timeline:
-            dated = []
-            undated = []
-            for evidence in item["evidence"]:
-                entry = (evidence_date(evidence.get("observed_at")), evidence)
-                (dated if entry[0] else undated).append(entry)
-            if not dated and not undated:
-                st.caption("No evidence entries are available for this lead.")
-            for stamp, evidence in sorted(dated, key=lambda entry: entry[0]) + undated:
-                st.caption(stamp.date().isoformat() if stamp else "Date unverified")
-                st.write(evidence["signal"])
-                st.write(evidence["excerpt"])
-                if url := safe_url(evidence.get("url")):
-                    st.link_button("Open evidence source", url)
-        with scoring:
-            st.caption("Points supplied by the sourcing engine.")
-            if item["score_components"]:
-                st.table([{"Signal": name, "Points": points}
-                          for name, points in item["score_components"].items()])
-        with diligence:
-            for warning in item["warnings"]:
-                st.write("• " + warning)
-            st.caption("Confirm team identity and equity financing before outreach. Compare publication dates against a dated baseline to assess earliness.")
-    st.divider()
-    st.subheader("Download the evidence trail")
-    st.download_button("Export lead dossiers (JSON)",
-          data=json.dumps(leads, ensure_ascii=False, indent=2),
-          file_name="hidden_gem_leads.json", mime="application/json")
-    buffer = io.StringIO()
-    writer = csv.DictWriter(buffer, fieldnames=["name", "sector", "location", "origin",
-                      "score", "lead_status", "funding_status", "source_url", "project_url"])
-    writer.writeheader()
-    for lead in leads:
-        writer.writerow({k: lead.get(k, "") for k in writer.fieldnames})
-    st.download_button("Export screening queue (CSV)", data=buffer.getvalue(),
-                       file_name="hidden_gem_leads.csv", mime="text/csv")
-else:
-    st.warning("No leads under the current settings. This is not evidence that none exist. "
-               "Try another lookback window or a different source; check source errors above.")
-
-with st.expander("Scouting methodology · limitations · HTGF fit"):
-    st.markdown("""
-**Goal:** surface German deep-tech and technology teams before their first funding round.
-
-**Live sources:**
-- TU Berlin: follows links from the public 2026 venture directory, then reads team and
-  EXIST support from each venture profile (subject to the site's accessibility).
-- Hacker News: searches Show HN and requires self-reported German location.
-- GitHub: finds recent technical repositories and verifies a German profile location.
-  Public project owners are **not automatically confirmed founders**.
-
-**Originality of signals:** research-to-product transfer, founder-team trace, explicit
-pilot/customer language, code artifact, university venture support and cross-source corroboration.
-
-**Important limits:** scores are transparent heuristic priorities and capped if no founding team
-is identified. The system cannot infer that a startup is unfunded from silence in databases.
-Claims about being first require dated baseline evidence from those databases. Public research
-grants are not equivalent to VC equity rounds.
-
-**Safe use:** no private data enrichment or automated unsolicited outreach. Respect publisher
-access restrictions and GitHub API rate limits. A human must validate any investor outreach.
-""")
+render_sources(item)

@@ -89,5 +89,47 @@
         "url": "https://www.online-handelsregister.de/handelsregisterauszug/be/Berlin-Charlottenburg/HRB/286719/Jouly-GmbH"
       }
     ]
+  },
+  {
+    "id": "research:constellate",
+    "name": "Constellate Proteomics",
+    "location": "Delft, Netherlands",
+    "team": "Carlos de Lannoy (co-founder, CEO); Dennis de Beeld (co-founder, CBO); Arian Khoshchin (co-founder, head of marketing)",
+    "cohort": "Dutch Venture Challenge, autumn 2025",
+    "description": "TU Delft biotechnology spin-out developing an instrument to check antibody quality during cell-line selection. A Dutch conference report named the team in November 2025. By September 2026 its accelerator reported two licensed university patents and pilots in China and Switzerland. Graduate Ventures announced a pre-seed investment the following month. This funded historical case shows what a scout could have seen before that announcement.",
+    "source_url": "https://www.dutchlifesciences.com/news/article/135/myriagon-wins-venture-challenge-fall-2025",
+    "project_url": "https://www.constellate.pro/",
+    "evidence": [
+      {
+        "signal": "Public venture competition",
+        "excerpt": "The Dutch Life Sciences Conference named Constellate Proteomics and its three team members in the autumn Venture Challenge cohort.",
+        "observed_at": "2025-11-20",
+        "url": "https://www.dutchlifesciences.com/news/article/135/myriagon-wins-venture-challenge-fall-2025"
+      },
+      {
+        "signal": "University spin-out launch",
+        "excerpt": "The company dates its TU Delft spin-out launch to 15 February 2026 and describes its single-molecule antibody analysis technology.",
+        "observed_at": "2026-02-15",
+        "url": "https://www.constellate.pro/constellate-about.html"
+      },
+      {
+        "signal": "Licensed patents and customer pilots",
+        "excerpt": "Its accelerator reported that Constellate licensed two TU Delft patents and was testing customer antibodies in China and Switzerland. Converting pilots into paid projects was still a milestone.",
+        "observed_at": "2026-09-30",
+        "url": "https://www.imecistart.com/news/constellate-proteomics-brings-antibody-quality-into-focus-five-weeks-earlier"
+      },
+      {
+        "signal": "Investor announcement",
+        "excerpt": "Graduate Ventures announced a pre-seed investment in the Delft company alongside Tech Scout Venture Fund and imec.istart.",
+        "observed_at": "2026-10-20",
+        "url": "https://www.graduate.nl/insights/new-pre-seed-investment-constellate-proteomics"
+      },
+      {
+        "signal": "Dealroom News funding coverage",
+        "excerpt": "Dealroom News covered the pre-seed financing on 20 October 2026. The date of its first company database entry remains unknown.",
+        "observed_at": "2026-10-20",
+        "url": "https://dealroom.co/news/164193-tu-delft-spinout-constellate-raises-pre-seed-to-speed-up-antibody-screen/"
+      }
+    ]
   }
 ]
