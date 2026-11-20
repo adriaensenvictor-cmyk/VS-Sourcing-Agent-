@@ -6,10 +6,11 @@ import streamlit as st
 
 from dashboard_data import dashboard_rows, export_csv, export_json, load_demo_run
 from discovery_pipeline import run_discovery
-from emergence import DISCOVERY_SOURCES
+from emergence import DISCOVERY_SOURCES, EUROPE
 from founder_signals import track_record
 from historical_replay import render_replay
 from incubator_directory import BVIZ_DIRECTORY, FEDERAL_NETWORK, PROGRAMME_FINDER, read_centres
+from linkedin_scout import render_linkedin
 from profile_evidence import profile_for
 from scout_desk import render_dossier, render_sources, reported_stage
 from scout_filters import (
@@ -43,11 +44,12 @@ div[data-testid="stTabs"] [role="tablist"] {overflow-x:auto}
 def open_queued_lead(lead_id):
     st.session_state.update(workspace="Screening", data_mode=LIVE_MODE, lead=lead_id,
                             geography=ANYWHERE, company_age="Any age", query="",
-                            funding=[], stages=[], sectors=[], early_follow_up=False, founder_history_filter="Any background", **{"shortlist-Live discovery": False,
+                            funding=[], stages=[], sectors=[], source_filter=[], early_follow_up=False,
+                            founder_history_filter="Any background", **{"shortlist-Live discovery": False,
                             "watch-Live discovery": False, "review_score": 0})
 
 
-page = st.sidebar.selectbox("Workspace", ["Screening", "New since review", "Incubators in Germany", "Historical replay"], key="workspace")
+page = st.sidebar.selectbox("Workspace", ["Screening", "New since review", "LinkedIn scouting", "Incubators in Germany", "Historical replay"], key="workspace")
 if page == "Historical replay":
     render_replay()
     st.stop()
@@ -80,6 +82,10 @@ if page == "Incubators in Germany":
 
 
 store = ScoutInbox()
+if page == "LinkedIn scouting":
+    render_linkedin(store, EUROPE)
+    st.stop()
+
 notices = store.inbox()
 if page == "New since review":
     st.header("New since review")
@@ -119,7 +125,7 @@ if run_clicked:
     try:
         if is_live:
             with st.spinner("Checking public early signals…"):
-                run = run_discovery(tuple(sources), days, github_limit=4)
+                run = run_discovery(tuple(sources), days, github_limit=4, linkedin_leads=store.linkedin_leads())
             if run["source_status"]:
                 store.record(run)
                 notices = store.inbox()
@@ -167,6 +173,10 @@ with st.expander("Funding, sector and review filters"):
     limits = st.multiselect("Funding", ["Unknown · verification required", "No public round found in scoped review", "Funding round reported"], key="funding")
     stage_options = sorted({reported_stage(row) for row in dashboard_rows(outcome)})
     stages = st.multiselect("Reported funding stage", stage_options, key="stages")
+    source_options = sorted({source for row in outcome.get("candidates", outcome["shortlist"])
+                             for source in (row.get("source_names") or [row.get("source")])
+                             if source})
+    source_filter = st.multiselect("Discovery source", source_options, key="source_filter")
     founder_filter = st.selectbox("Founder history", ["Any background", "Previous employer", "Previous startup"],
                                   key="founder_history_filter")
     minimum = st.slider("Minimum evaluation score", 0, 100, step=1, key="review_score",
@@ -188,6 +198,8 @@ for item in rows:
     if (limits and item["funding_label"] not in limits) or (stages and reported_stage(item) not in stages):
         continue
     if sectors and item["sector"] not in sectors:
+        continue
+    if source_filter and not set(source_filter).intersection(item.get("source_names") or [item["origin"]]):
         continue
     if founder_filter != "Any background" and not any(
             entry["signal"] == founder_filter for entry in track_record(item)):

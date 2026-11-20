@@ -63,6 +63,9 @@ class ScoutInbox:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self.connect() as db:
             db.executescript("""
+                CREATE TABLE IF NOT EXISTS linkedin_leads (
+                    id TEXT PRIMARY KEY, payload TEXT NOT NULL, saved_at TEXT NOT NULL
+                );
                 CREATE TABLE IF NOT EXISTS runs (
                     captured_at TEXT PRIMARY KEY, payload TEXT NOT NULL, usable INTEGER NOT NULL
                 );
@@ -94,6 +97,19 @@ class ScoutInbox:
                 yield db
         finally:
             db.close()
+
+    def save_linkedin_lead(self, row):
+        saved_at = datetime.now(timezone.utc).isoformat()
+        with self.connect() as db:
+            db.execute("""INSERT INTO linkedin_leads VALUES (?, ?, ?)
+                          ON CONFLICT(id) DO UPDATE SET payload=excluded.payload, saved_at=excluded.saved_at""",
+                       (row["id"], json.dumps(row), saved_at))
+
+    def linkedin_leads(self):
+        with self.connect() as db:
+            return [json.loads(row["payload"]) for row in db.execute(
+                "SELECT payload FROM linkedin_leads ORDER BY saved_at DESC, id"
+            )]
 
     def record(self, outcome):
         if outcome.get("mode") != "live":
@@ -185,8 +201,9 @@ def main():
     parser.add_argument("--db", help="Path shared with the dashboard (default: FIRSTTRACE_DB_PATH)")
     parser.add_argument("--sources", nargs="+", choices=DISCOVERY_SOURCES, default=DISCOVERY_SOURCES)
     options = parser.parse_args()
-    run = run_discovery(tuple(options.sources), github_limit=4)
-    summary = ScoutInbox(options.db).record(run)
+    store = ScoutInbox(options.db)
+    run = run_discovery(tuple(options.sources), github_limit=4, linkedin_leads=store.linkedin_leads())
+    summary = store.record(run)
     print(json.dumps({**summary, "generated_at": run["generated_at"], "source_status": run["source_status"]}))
     return 0 if any(s["state"] in {"ok", "partial"} for s in run["source_status"].values()) else 1
 

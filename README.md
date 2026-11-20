@@ -25,6 +25,11 @@ In **Screening**, filter by geography, company age, funding, and sector. Give a 
 
 The desk stores its own workflow state. Run `python scout_inbox.py` to refresh it outside Streamlit. The scanner and dashboard use `FIRSTTRACE_DB_PATH` or `~/.firsttrace/scout-workflow.sqlite3`. For the optional sourced OpenAI brief, provide `OPENAI_API_KEY` to the dashboard process. The written brief and downloads are usable offline. A model call occurs when the analyst explicitly submits a question.
 
+In **LinkedIn scouting**, open a targeted search in LinkedIn and save a public founder
+announcement with its permalink and your own summary. The next dashboard or n8n scan
+includes these records under **LinkedIn (analyst submissions)**. This source keeps the
+scout’s assessment distinct from independently verified evidence.
+
 See the [competitive review, demo sequence, and n8n runbook](research/scout-workflow.md).
 The dossier uses the reviewed, deterministic founder–venture fit and legal registration evidence
 from [Victor's PR #6](https://github.com/adriaensenvictor-cmyk/VS-Sourcing-Agent-/pull/6).

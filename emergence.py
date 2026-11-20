@@ -11,6 +11,7 @@ from urllib.parse import urlencode, urlsplit
 from urllib.request import Request, urlopen
 
 from founder_fit import evaluate, review_priority
+from linkedin_scout import LINKEDIN_SOURCE
 from qualification import detect_intent, merge_candidates, url_key
 from sourcing import positive_int
 
@@ -19,7 +20,7 @@ PROGRAMME_SOURCES = (
     "UnternehmerTUM Incubator", "imec.istart", "BayStartUP roster",
     "Fraunhofer AHEAD", "SpinLab", "RootCamp", "HPI Engine",
 )
-DISCOVERY_SOURCES = CORE_DISCOVERY_SOURCES + PROGRAMME_SOURCES
+DISCOVERY_SOURCES = CORE_DISCOVERY_SOURCES + PROGRAMME_SOURCES + (LINKEDIN_SOURCE,)
 
 EXIST = "https://portal.mytum.de/jobs/wissenschaftler/NewsArticle_20260806_092633/newsarticle_view"
 EUROPE = ("Germany", "France", "Netherlands", "Switzerland", "Austria", "Belgium",

@@ -7,6 +7,7 @@ import streamlit as st
 
 from founder_fit import FOUNDER_WEIGHT, VENTURE_WEIGHT, weighted_points
 from founder_signals import track_record
+from linkedin_scout import PUBLIC_POST
 from profile_evidence import profile_for, SOURCE_GUIDE
 from scout_filters import formation_record, funding_stage
 from scout_inbox import DECISIONS, WATCH_FOR, valid_url
@@ -78,6 +79,8 @@ def render_dossier(item, store, saved, notices):
         st.markdown(f'<img class="venture-mark" alt="" src="data:image/png;base64,{b64encode(asset.read_bytes()).decode()}">',
                     unsafe_allow_html=True)
     st.header(item["name"])
+    if any(entry["signal"] == PUBLIC_POST for entry in item.get("evidence", [])):
+        st.caption("Includes a scout-submitted LinkedIn announcement. Confirm the founder, location and funding before outreach.")
     if item["early_follow_up"]:
         st.caption("Early follow-up · programme or university evidence. Product readiness and commercial traction need verification.")
     description = item.get("description") or "Description unavailable."
