@@ -6,8 +6,9 @@ from datetime import date
 from pathlib import Path
 
 from discovery_pipeline import campus_record
-from emergence import rank_candidates
+from emergence import early_founder_follow_up, rank_candidates
 from engine import load_research_snapshot
+from founder_fit import FOUNDER_WEIGHT, VENTURE_WEIGHT, evaluate, review_priority, weighted_points
 
 ROOT = Path(__file__).resolve().parent
 FUNDING_LABELS = {
@@ -18,7 +19,8 @@ FUNDING_LABELS = {
 CSV_FIELDS = ("name", "sector", "location", "origin", "score", "evidence_confidence",
               "lead_status", "funding_status", "funding_label", "source_url", "project_url",
               "earliest_public_date", "shortlisted", "mode", "public_trace_age",
-              "source_urls", "founder_evidence", "timeline", "claims", "funding_review")
+              "source_urls", "founder_evidence", "timeline", "claims", "funding_review",
+              "evaluation_score", "team_points_out_of_60", "project_points_out_of_40", "evaluation_coverage")
 
 
 def load_demo_run():
@@ -48,10 +50,14 @@ def public_trace_age(trace_date, run_date):
 
 
 def dashboard_rows(run, *, shortlist_only=False):
-    """Map the shared payload to the UI without recalculating rank or eligibility."""
+    """Present stored leads with the current grade, retaining their shortlist eligibility."""
     selected = {row["id"] for row in run["shortlist"]}
     rows = run["shortlist"] if shortlist_only else run.get("candidates", run["shortlist"])
     result = []
+    try:
+        as_of = date.fromisoformat(run.get("generated_at", "")[:10])
+    except (TypeError, ValueError):
+        as_of = date.min
     for row in rows:
         funding = row.get("funding") or {}
         status = funding.get("status", "unknown")
@@ -59,15 +65,22 @@ def dashboard_rows(run, *, shortlist_only=False):
         founders = row.get("founders", [])
         earliest = row.get("earliest_verified_public_signal") or {}
         is_shortlisted = row["id"] in selected
+        exclusions = set(row.get("shortlist_exclusions") or [])
+        early_review = (
+            not row.get("commercialization_signals")
+            and early_founder_follow_up([row])
+            and not exclusions & {"funded_or_later_stage", "project_intent_risk"}
+        )
         result.append({
             **row,
             "name": row["title"], "sector": row.get("sector") or "Unclassified",
             "origin": row.get("source") or "Unknown source",
             "location": location.get("country") or "Needs verification",
             "location_evidence": location,
-            "team": " · ".join(person["name"] for person in founders) or row.get("team", ""),
+            "team": " · ".join(person["name"] for person in founders) or row.get("team") or "",
             "founder_identified": bool(founders or row.get("team")),
             "score": row["founder_emergence_score"],
+            "founder_venture_fit": evaluate([row], as_of),
             "score_components": row.get("emergence_dimensions", {}),
             "funding_status": status,
             "funding_label": FUNDING_LABELS.get(status, FUNDING_LABELS["unknown"]),
@@ -75,9 +88,12 @@ def dashboard_rows(run, *, shortlist_only=False):
             "earliest_public_date": earliest.get("date"),
             "public_trace_age": public_trace_age(earliest.get("date"), run.get("generated_at")),
             "shortlisted": is_shortlisted,
-            "lead_status": "Shortlisted" if is_shortlisted else "Additional candidate",
+            "early_follow_up": early_review,
+            "lead_status": "Early follow-up" if early_review else ("Shortlisted" if is_shortlisted else "Additional candidate"),
             "mode": run.get("mode", "research_snapshot"),
         })
+    result.sort(key=lambda row: review_priority(row["location"], row["founder_venture_fit"]["score"], row["score"]),
+                reverse=True)
     return result
 
 
@@ -97,6 +113,10 @@ def export_csv(rows):
     writer.writeheader()
     for row in rows:
         values = {key: row.get(key, "") for key in CSV_FIELDS}
+        if fit := row.get("founder_venture_fit"):
+            values.update(evaluation_score=fit["score"], evaluation_coverage=fit["coverage"],
+                          team_points_out_of_60=weighted_points(fit["founder"], FOUNDER_WEIGHT),
+                          project_points_out_of_40=weighted_points(fit["venture"], VENTURE_WEIGHT))
         for column, key in (("source_urls", "sources"), ("founder_evidence", "founders"),
                             ("timeline", "timeline"), ("claims", "claims"), ("funding_review", "funding")):
             values[column] = json.dumps(row.get(key), ensure_ascii=False)

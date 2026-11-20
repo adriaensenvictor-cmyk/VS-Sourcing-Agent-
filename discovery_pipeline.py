@@ -2,7 +2,8 @@
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
 
-from emergence import DISCOVERY_SOURCES, discover_github, rank_candidates, university_lead
+from emergence import DISCOVERY_SOURCES, EVENT_SOURCES, PROGRAMME_SOURCES, discover_github, rank_candidates, university_lead
+from linkedin_scout import LINKEDIN_SOURCE
 from qualification import detect_intent
 from radar import collect, rank_rows
 
@@ -50,7 +51,19 @@ def source_result(loader):
                   "warnings": list(dict.fromkeys(warnings))}
 
 
-def run_discovery(sources=DISCOVERY_SOURCES, days=365, *, github_limit=5, limit=10, api_key=None):
+def load_programme(name, warnings):
+    if name in EVENT_SOURCES:
+        from early_sources import EVENT_READERS
+
+        return EVENT_READERS[name](warnings)
+
+    from programmes import READERS
+
+    return READERS[name](warnings)
+
+
+def run_discovery(sources=DISCOVERY_SOURCES, days=365, *, github_limit=5, limit=10, api_key=None,
+                  linkedin_leads=()):
     """Collect independently, retain source diagnostics, and let PR #3 rank."""
     loaders = {
         "TUM Venture Labs": lambda warnings: collect("campus.py", "--limit", "100", warnings=warnings),
@@ -59,9 +72,11 @@ def run_discovery(sources=DISCOVERY_SOURCES, days=365, *, github_limit=5, limit=
         ),
         "TU Berlin": load_campus,
     }
+    for name in PROGRAMME_SOURCES:
+        loaders[name] = lambda warnings, programme=name: load_programme(programme, warnings)
     rows = []
     status = {}
-    with ThreadPoolExecutor(max_workers=3) as executor:
+    with ThreadPoolExecutor(max_workers=5) as executor:
         jobs = {name: executor.submit(source_result, loader)
                 for name, loader in loaders.items() if name in sources}
         for name, job in jobs.items():
@@ -69,6 +84,10 @@ def run_discovery(sources=DISCOVERY_SOURCES, days=365, *, github_limit=5, limit=
             rows.extend(found)
 
     qualified = rank_rows(rows, skip_github_releases=True, api_key=api_key)
+    if LINKEDIN_SOURCE in sources:
+        qualified.extend(linkedin_leads)
+        status[LINKEDIN_SOURCE] = {"state": "ok" if linkedin_leads else "skipped",
+                                   "count": len(linkedin_leads), "warnings": []}
     if "TUM Venture Labs" in sources:
         qualified.append({**university_lead(), "record_provenance": "reviewed public reference"})
     github_rows = []

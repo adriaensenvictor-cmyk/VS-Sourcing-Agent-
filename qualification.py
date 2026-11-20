@@ -53,6 +53,8 @@ SIGNALS = {
 
 # Conservative cues. Text matches are hypotheses until reviewed.
 INTENT_PATTERNS = {
+    "formation_intent": r"\b(?:we(?:'re| are)|I(?:'m| am)) (?:forming|starting|founding|building) "
+                        r"(?:a|an|our) (?:new )?(?:company|start[- ]?up)\b",
     "incorporation": r"\b(?:incorporated|registered (?:our|the) company)\b",
     "launch": r"\b(?:we launched|now available|public beta|went live)\b",
     "waitlist": r"\b(?:join (?:our|the) (?:waitlist|waiting list)|sign up for early access)\b",
@@ -178,7 +180,7 @@ def qualify(records, release_events=(), search_review=None):
         if key and key[0] == "github":
             links["github"].append(record["project_url"])
         linkedin.extend(record["linkedin"]["public_links"])
-        evidence.extend({**item, "source_url": url} for item in record["evidence"])
+        evidence.extend({**item, "source_url": item.get("source_url") or url} for item in record["evidence"])
         founders.extend(person for person in record.get("founders", []) if person.get("name") and person.get("source_url"))
         founders.extend(review.get("founders", []))
         if record.get("founder") and not review.get("founders") and record.get("profile"):

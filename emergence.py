@@ -10,10 +10,19 @@ from datetime import date, datetime, timedelta, timezone
 from urllib.parse import urlencode, urlsplit
 from urllib.request import Request, urlopen
 
+from founder_fit import evaluate, review_priority
+from founder_signals import founder_history
+from linkedin_scout import LINKEDIN_SOURCE
 from qualification import detect_intent, merge_candidates, url_key
 from sourcing import positive_int
 
-DISCOVERY_SOURCES = ("TUM Venture Labs", "Show HN", "GitHub", "TU Berlin")
+CORE_DISCOVERY_SOURCES = ("TUM Venture Labs", "Show HN", "GitHub", "TU Berlin")
+EVENT_SOURCES = ("TUM IDEAward", "Falling Walls Venture")
+PROGRAMME_SOURCES = (
+    "UnternehmerTUM Incubator", "imec.istart", "BayStartUP roster",
+    "Fraunhofer AHEAD", "SpinLab", "RootCamp", "HPI Engine",
+) + EVENT_SOURCES
+DISCOVERY_SOURCES = CORE_DISCOVERY_SOURCES + PROGRAMME_SOURCES + (LINKEDIN_SOURCE,)
 
 EXIST = "https://portal.mytum.de/jobs/wissenschaftler/NewsArticle_20260806_092633/newsarticle_view"
 EUROPE = ("Germany", "France", "Netherlands", "Switzerland", "Austria", "Belgium",
@@ -118,6 +127,8 @@ def github_record(repo, since):
         "project_url": website if urlsplit(website or "").scheme in {"http", "https"} else None,
         "source_url": url, "sources": [url], "source": "GitHub", "github_activity": signals,
         "links": {"github": [url]}, "claims": claims, "red_flags": flags, "founders": founders,
+        "evidence": founder_history(repo["name"], [person["name"] for person in founders],
+                                    readme.splitlines(), readme_url),
         "location": {"country": country, "confidence": "self_reported" if country else "unknown",
                      "source_url": readme_url if country else None},
         "timeline": [{"date": repo["created_at"], "url": url,
@@ -218,6 +229,29 @@ def score_candidate(claims, founders, activity_rows, earliest, funding, sources)
     }
 
 
+def early_founder_follow_up(rows):
+    """A current, sourced venture team can merit a call before launch."""
+    for row in rows:
+        funding = row.get("funding") or {}
+        reviews = funding.get("reviews", [])
+        if (row.get("funding_status") in {"pre_seed_financing_reported", "seed_stage_reported"}
+                or any(check.get("reported_as") == "pre_seed_financing_reported" for check in reviews)):
+            return False
+    for row in rows:
+        signals = {item["signal"] for item in row.get("evidence", [])}
+        sources = set(row.get("source_names") or [row.get("source")])
+        if sources.intersection(PROGRAMME_SOURCES) and "Recent programme selection" in signals:
+            return True
+        if "TUM Venture Labs" in sources and "University team in formation" in signals:
+            return True
+        if "TU Berlin" in sources and {"Named team on university profile", "EXIST support"} <= signals:
+            return True
+        if (any(person.get("name") and person.get("source_url") for person in row.get("founders", []))
+                and any(claim["type"] == "formation_intent" for claim in row.get("claims", []))):
+            return True
+    return False
+
+
 def combine(rows):
     lead = {**rows[0]}
     claims = list({(item["type"], item["source_url"], item["status"]): item
@@ -275,7 +309,7 @@ def combine(rows):
         filters.append("project_intent_risk")
     if location["country"] not in EUROPE:
         filters.append("location_outside_scope_or_unverified")
-    if not commercial:
+    if not commercial and not early_founder_follow_up(rows):
         filters.append("no_commercialization_evidence")
 
     primary_source = next((row.get("source") for row in rows if row.get("source")), None)
@@ -301,14 +335,19 @@ def combine(rows):
 
 
 def rank_candidates(rows, limit, *, github_count=0, source_status=None, mode="live"):
+    generated_at = datetime.now(timezone.utc)
     candidates = [combine(group) for group in merge_candidates(rows)]
-    candidates.sort(key=lambda lead: (lead["location"]["country"] == "Germany",
-                                     lead["founder_emergence_score"]), reverse=True)
+    candidates.sort(
+        key=lambda lead: review_priority(lead["location"]["country"],
+                                         evaluate([lead], generated_at.date())["score"],
+                                         lead["founder_emergence_score"]),
+        reverse=True,
+    )
     shortlist = [lead for lead in candidates if not lead["shortlist_exclusions"]][:min(10, limit)]
     return {
         "schema_version": 1,
         "mode": mode,
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": generated_at.isoformat(),
         "source_status": source_status or {},
         "github_repositories_reviewed": github_count,
         "shortlist": shortlist,
@@ -331,7 +370,7 @@ def main():
     key = os.getenv("BRAVE_SEARCH_API_KEY") if args.search_funding else None
     if args.search_funding and not key:
         parser.error("--search-funding requires BRAVE_SEARCH_API_KEY")
-    sources = DISCOVERY_SOURCES if args.tu_berlin else DISCOVERY_SOURCES[:-1]
+    sources = DISCOVERY_SOURCES if args.tu_berlin else tuple(name for name in DISCOVERY_SOURCES if name != "TU Berlin")
     run = run_discovery(sources, args.days, github_limit=args.github_limit, limit=args.limit, api_key=key)
     print(json.dumps(run, ensure_ascii=False, indent=2))
     return int(all(status["state"] == "error" for status in run["source_status"].values()))

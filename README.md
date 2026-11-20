@@ -19,6 +19,48 @@ Choose **Live discovery**, select sources, and click **Run sourcing engine**. Th
 
 **Verified research snapshot** loads the original manually researched examples for Simra AI, TerraTask and Jouly. The UI and exports label this mode. The independently captured PR #3 shortlist is in `research/founder-shortlist.json`.
 
+## Scout workflow
+
+In **Screening**, filter by geography, company age, funding, and sector. Give a lead a **Meet**, **Watch**, or **Pass** decision with a reason. Live decisions and saved evidence appear in **New since review**. **Historical replay** presents a curated case with later evidence revealed after the scout makes a call.
+
+The desk stores its own workflow state. Run `python scout_inbox.py` to refresh it outside Streamlit. The scanner and dashboard use `FIRSTTRACE_DB_PATH` or `~/.firsttrace/scout-workflow.sqlite3`. For the optional sourced OpenAI brief, provide `OPENAI_API_KEY` to the dashboard process. The written brief and downloads are usable offline. A model call occurs when the analyst explicitly submits a question.
+
+In **LinkedIn scouting**, open a targeted search in LinkedIn and save a public founder
+announcement with its permalink and your own summary. The next dashboard or n8n scan
+includes these records under **LinkedIn (analyst submissions)**. This source keeps the
+scout’s assessment distinct from independently verified evidence. The [former-employer
+catalogue and its sources](research/founder-employers.md) power the search presets and
+prior-employer detection.
+
+Use **Innovation event evidence** in Screening to view teams from published pitch
+and competition rosters. The scanner checks the latest published TUM IDEAward
+results and Falling Walls Venture finalists, alongside BayStartUP and Fraunhofer.
+The **Repeat founder · recent signal** filter pairs a sourced prior venture with a
+dated public signal for the current project within the past year.
+**Evidence → Discovery timing** displays the earliest trace in the dossier, the
+desk's first recorded capture, and comparison sources where reviewed. A numeric
+comparison requires two exact dates. An undated company profile stays undated.
+
+**School projects** displays public German school-competition projects and
+documented company transitions. The view refreshes its source pages on access
+after the one-hour cache expires. The investor queue contains venture candidates
+from the discovery pipeline. School records have no individual profiles.
+
+See the [competitive review, demo sequence, and n8n runbook](research/scout-workflow.md).
+The dossier uses the reviewed, deterministic founder–venture fit and legal registration evidence
+from [Victor's PR #6](https://github.com/adriaensenvictor-cmyk/VS-Sourcing-Agent-/pull/6).
+The evaluation uses 60 points for the team and 40 for the project, based on documented evidence.
+The score is provisional while some criteria remain open. A missing axis or conflicting evidence
+leaves the overall grade pending. Germany comes first, then the evaluation score, with early
+signals breaking ties or ordering pending candidates. The same eligibility rules govern shortlisting.
+
+Live discovery also reads UnternehmerTUM Incubator, imec.istart, the BayStartUP
+2026 roster, Fraunhofer AHEAD, SpinLab, RootCamp and HPI Engine. The **Incubators
+in Germany** workspace indexes public German centre listings. **Early follow-up
+only** shows sourced projects with product and traction details still to verify. Open **All locations** to review records that lack location
+evidence. See [source coverage and founder signals](research/incubator-coverage.md)
+for limits and additional programmes. The [exact discovery and scoring rules](research/discovery-rules.md) are documented in French.
+
 ## Run the engine and tests
 
 ```sh
@@ -35,7 +77,7 @@ Optional environment variables for GitHub API quota are `FOUNDER_RADAR_GITHUB_TO
 1. TUM Venture Labs and Show HN use the existing main-branch collectors. TU Berlin adapts the public venture directory and carries through published team and grant evidence. GitHub searches recent repositories and samples linked commit and release metadata.
 2. Qualification carries source URLs, founder evidence, claims, dated events and public funding reviews. Identity uses declared project URLs or specific GitHub repositories. GitHub profile location does not establish startup location. A directory cohort year is not an incorporation date.
 3. The Founder Emergence score weighs technical execution, founding team, commercialization, early-stage signals, market evidence and evidence quality. Shortlist eligibility is evaluated separately, with funded and later-stage companies excluded. A public grant is tracked separately from an equity round. `no_funding_found` identifies a scoped review, and `unknown` calls for diligence.
-4. The shared JSON envelope provides `schema_version`, `mode`, `generated_at`, `source_status`, `candidates`, `shortlist` and `manual_review`. Dashboard labels derive from this record without reranking. The older radar JSON array remains available. See [RADAR.md](RADAR.md).
+4. The shared JSON envelope provides `schema_version`, `mode`, `generated_at`, `source_status`, `candidates`, `shortlist` and `manual_review`. The dashboard applies the same evaluation order to stored runs. The CSV includes the new evaluation alongside the original signal score. The older radar JSON array remains available. See [RADAR.md](RADAR.md).
 
 Source failures are reported independently. Public directories, repository samples and funding reviews have limited coverage. The TUM autonomous-trucks announcement is a reviewed public reference, and its EXIST application does not establish a grant award. Comparing lead time against other databases requires a dated baseline. Founder Emergence scores prioritize review and do not estimate investment returns. Verify public evidence before outreach.
 

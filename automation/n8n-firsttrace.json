@@ -1,0 +1,106 @@
+{
+  "name": "FirstTrace morning scan",
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/Berlin"
+  },
+  "nodes": [
+    {
+      "id": "d1e5c0d6-148f-4163-82c6-495d02b4f83f",
+      "name": "Run manually",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "7d1a3b56-4cf9-49b5-9b52-6891b9d007c8",
+      "name": "Morning scan",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        160
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 * * 1-5"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "3b0bcaaa-eb7e-463a-abe6-b8400c2f2bec",
+      "name": "Run FirstTrace on the scout host",
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [
+        260,
+        80
+      ],
+      "parameters": {
+        "authentication": "privateKey",
+        "resource": "command",
+        "operation": "execute",
+        "cwd": "/opt/firsttrace",
+        "command": ".venv/bin/python scout_inbox.py --db /var/lib/firsttrace/desk.sqlite3"
+      }
+    },
+    {
+      "id": "9e7832a4-e17d-46f5-be94-814502205fa7",
+      "name": "Read scan result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        530,
+        80
+      ],
+      "parameters": {
+        "jsCode": "const result = $input.first().json;\nif (result.code !== 0) {\n  throw new Error('FirstTrace scanner failed. Check the runner and source status.');\n}\nconst scan = JSON.parse(result.stdout);\nreturn [{ json: {\n  ...scan,\n  has_changes: scan.new_leads + scan.watch_matches > 0,\n  degraded_sources: Object.entries(scan.source_status)\n    .filter(([, source]) => ['error', 'partial'].includes(source.state))\n    .map(([name]) => name),\n} }];"
+      }
+    }
+  ],
+  "connections": {
+    "Run manually": {
+      "main": [
+        [
+          {
+            "node": "Run FirstTrace on the scout host",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Morning scan": {
+      "main": [
+        [
+          {
+            "node": "Run FirstTrace on the scout host",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run FirstTrace on the scout host": {
+      "main": [
+        [
+          {
+            "node": "Read scan result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

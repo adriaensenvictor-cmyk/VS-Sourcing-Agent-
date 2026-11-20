@@ -1,0 +1,39 @@
+{
+  "https://www.tum-venture-labs.de/teams/rapid-resilience": {
+    "reviewed_on": "2026-11-20",
+    "observations": [
+      {"criterion": "legal_formation", "date": "2026-09-22", "text": "CompanyHouse explicitly lists the commercial register entry (Eintragung) for Rapid Resilience GmbH on 22 September 2026 and separately dates the articles of association to 27 July 2026.", "source_url": "https://www.companyhouse.de/Rapid-Resilience-GmbH-Maikammer"},
+      {"criterion": "domain_expertise", "subject": "Jan Boeckmann", "text": "TUM identifies Boeckmann as the founder and describes his doctoral research on siting flood-mitigation measures."},
+      {"criterion": "problem_significance", "text": "TUM reports that interviews with municipalities identified a gap in access to heavy-rain risk tools."},
+      {"criterion": "technical_feasibility", "text": "TUM describes a research-validated prototype for rain-hazard mapping."}
+    ]
+  },
+  "https://www.tum-venture-labs.de/teams/foresaight-ai": {
+    "reviewed_on": "2026-11-20",
+    "observations": [
+      {"criterion": "technical_feasibility", "text": "The team describes moving from a working forecasting prototype to a platform for multiple clients."},
+      {"criterion": "commercial_path", "text": "The team reports offering transparent pilots and backtesting to SME prospects. Pilot completion and revenue need verification."}
+    ]
+  },
+  "https://www.tu.berlin/entrepreneurship/startup-support/tu-startups/container-profile/startups-2026-simra-ai": {
+    "reviewed_on": "2026-11-20",
+    "observations": [
+      {"criterion": "domain_expertise", "subject": "Amir Mabhout", "text": "TU Berlin lists the CEO's doctorate in mixed-signal circuit design, the team's first product domain."},
+      {"criterion": "built_technology", "subject": "Amir Mabhout", "text": "The company credits Mabhout with production analog and mixed-signal tape-outs, including Ethernet PHY and energy-harvesting designs.", "source_url": "https://www.simratech.com/"},
+      {"criterion": "research_contribution", "subject": "Amir Mabhout", "text": "The company credits Mabhout with five first-author IEEE papers. The publication list needs independent corroboration.", "source_url": "https://www.simratech.com/"},
+      {"criterion": "operating_experience", "subject": "Holger Niessner", "text": "The company reports that Niessner founded and sold Tacit and led data science and full-stack teams.", "source_url": "https://www.simratech.com/"},
+      {"criterion": "operating_experience", "subject": "Holger Niessner", "text": "Niessner previously co-founded Tacit. Co-founder Bijan Farsijani publicly confirmed the founding partnership and the acquisition by Cent.", "source_url": "https://www.linkedin.com/posts/bijan-farsijani-9005baa8_big-news-tacit-is-now-part-of-cent-activity-7070422087210815489-JXiz"},
+      {"criterion": "complementary_team", "subject": "Amir Mabhout and Holger Niessner", "text": "The team page documents circuit-design execution by Mabhout and engineering-team leadership by Niessner.", "source_url": "https://www.simratech.com/"},
+      {"criterion": "problem_significance", "text": "The TU Berlin profile describes days of manual setup between a specification and a working circuit simulation."},
+      {"criterion": "differentiation", "text": "The profile describes agents operating existing EDA tools, with solver checks and a trace of each step. Comparative performance remains unverified."},
+      {"criterion": "technical_feasibility", "text": "The company publishes demos of its verification and characterization workflows.", "source_url": "https://www.simratech.com/"},
+      {"criterion": "commercial_path", "text": "The company offers early access for design partners and a walkthrough on prospective users' circuits.", "source_url": "https://www.simratech.com/"}
+    ]
+  },
+  "https://www.tu.berlin/entrepreneurship/startup-support/tu-startups/container-profile/startups-2026-jouly": {
+    "reviewed_on": "2026-11-20",
+    "observations": [
+      {"criterion": "legal_formation", "date": "2026-04-28", "text": "The public register listing gives 28 April 2026 as Jouly GmbH's founding/registration date, HRB 286719.", "source_url": "https://www.online-handelsregister.de/handelsregisterauszug/be/Berlin-Charlottenburg/HRB/286719/Jouly-GmbH"}
+    ]
+  }
+}

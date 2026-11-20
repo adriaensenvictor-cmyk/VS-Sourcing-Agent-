@@ -3,6 +3,7 @@ import csv
 import io
 import json
 import subprocess
+import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -35,6 +36,18 @@ class IntegrationTests(unittest.TestCase):
             self.assertEqual(row["sources"], original["sources"])
         self.assertIn("scoped review", rows[0]["funding_label"])
         self.assertIn("Unknown", rows[1]["funding_label"])
+
+    def test_live_candidate_without_team_stays_searchable(self):
+        candidate = {**self.run["shortlist"][0], "founders": [], "team": None}
+        run = {**self.run, "candidates": [candidate], "shortlist": [candidate]}
+        with tempfile.TemporaryDirectory() as tmp:
+            db = {"FIRSTTRACE_DB_PATH": str(Path(tmp) / "inbox.sqlite3")}
+            with patch.dict("os.environ", db), patch("discovery_pipeline.run_discovery", return_value=run):
+                app = AppTest.from_file(str(ROOT / "app.py")).run()
+                app.button[0].click().run()
+                app.text_input(key="query").set_value("Rapid").run()
+        self.assertFalse(app.exception)
+        self.assertIn("Rapid Resilience", [heading.value for heading in app.header])
 
     def test_exports_keep_filtered_funding_and_canonical_json(self):
         row = dashboard_rows(self.run)[0]
@@ -104,6 +117,11 @@ class IntegrationTests(unittest.TestCase):
         self.assertEqual(status["state"], "partial")
 
     def test_app_consumes_authoritative_shortlist_and_keeps_snapshot_mode(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        db_path = patch.dict("os.environ", {"FIRSTTRACE_DB_PATH": str(Path(tmp.name) / "inbox.sqlite3")})
+        db_path.start()
+        self.addCleanup(db_path.stop)
         app = AppTest.from_file(str(ROOT / "app.py")).run()
         with patch("discovery_pipeline.run_discovery", return_value=self.run) as run:
             app.button[0].click().run()
@@ -111,11 +129,12 @@ class IntegrationTests(unittest.TestCase):
         self.assertFalse(app.exception)
         self.assertEqual(app.metric[0].value, "3")
         self.assertIn("Rapid Resilience", [heading.value for heading in app.header])
-        self.assertTrue(any("Company age is unverified" in entry.value for entry in app.caption))
+        self.assertTrue(any("Legal registration · 2026-09-22" in entry.value for entry in app.caption))
+        self.assertIn("Team", [metric.label for metric in app.metric])
         self.assertTrue(any("Jan Boeckmann" in entry.value for entry in app.text))
         self.assertTrue(any("Munich Startup Festival" in entry.value for entry in app.text))
-        self.assertEqual(len(app.get("download_button")), 2)
-        app.radio[0].set_value("Verified research snapshot").run()
+        self.assertEqual(len(app.get("download_button")), 3)
+        app.radio(key="data_mode").set_value("Verified research snapshot").run()
         app.button[0].click().run()
         self.assertFalse(app.exception)
         self.assertTrue(any("DEMO RESEARCH MODE" in warning.value for warning in app.warning))

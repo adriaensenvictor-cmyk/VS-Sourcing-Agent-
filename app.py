@@ -1,189 +1,308 @@
-"""First Trace's evidence-first Streamlit dashboard."""
-from urllib.parse import urlsplit
+"""First Trace scout desk backed by the authoritative discovery pipeline."""
+from datetime import date
+import sqlite3
 
 import streamlit as st
 
 from dashboard_data import dashboard_rows, export_csv, export_json, load_demo_run
-from discovery_pipeline import run_discovery
-from emergence import DISCOVERY_SOURCES
+from discovery_pipeline import run_discovery, source_result
+from earliness import recent_signal
+from early_sources import CLIPRO, JUGEND, JUNIOR, PUBLIC_TRANSITIONS, SCHOOL_READERS
+from emergence import DISCOVERY_SOURCES, EVENT_SOURCES, EUROPE
+from founder_signals import track_record
+from historical_replay import render_replay
+from incubator_directory import BVIZ_DIRECTORY, FEDERAL_NETWORK, PROGRAMME_FINDER, read_centres
+from linkedin_scout import render_linkedin
+from profile_evidence import profile_for
+from scout_desk import render_dossier, render_sources, reported_stage
+from scout_filters import (
+    ALL_EUROPE, ANYWHERE, REGIONS, age_fit, formation_record,
+    location_region, region_matches,
+)
+from scout_inbox import ScoutInbox, valid_url
+
 
 LIVE_MODE = "Live discovery"
 SNAPSHOT_MODE = "Verified research snapshot"
+REPEAT_FOUNDER = "Repeat founder · recent signal"
+PITCH_SOURCES = frozenset((*EVENT_SOURCES, "BayStartUP roster", "Fraunhofer AHEAD"))
 
-st.set_page_config(page_title="First Trace | HTGF Scout", layout="wide",
-                   initial_sidebar_state="expanded")
+st.set_page_config(page_title="FirstTrace · Scout Desk", layout="wide")
 st.markdown("""
 <style>
-div[data-testid="stMetric"] {border:1px solid #8793a255;border-radius:12px;padding:12px}
-h1,h2,h3 {letter-spacing:-.025em}
+[data-testid="stMainBlockContainer"] {max-width:1330px;padding-top:2rem}
+.scout-banner {background:#103c35;color:#effaf4;border-radius:20px;padding:1.4rem 2rem;margin-bottom:.75rem}
+.scout-banner h1 {color:#fff9ef;font:500 clamp(2rem,4vw,3.25rem) Georgia,serif;padding:0;margin:.35rem 0}
+.scout-banner p {margin:0;color:#d3e8de}
+.venture-mark {width:62px;height:62px;object-fit:contain;background:white;border-radius:10px}
+div[data-testid="stMetric"] {border:1px solid #7a9a9066;border-radius:12px;padding:.55rem .8rem}
+div[data-testid="stTabs"] [role="tablist"] {overflow-x:auto}
 </style>
+<header class="scout-banner">
+<p>FirstTrace / HTGF</p>
+<h1>Scout desk</h1>
+<p>Find the signal that makes a first call worth taking.</p>
+</header>
 """, unsafe_allow_html=True)
 
-st.title("First Trace")
-st.caption("Early-stage founder intelligence · HTGF Venture Capital Challenge")
-st.info("Scores prioritize diligence. A grant and a public funding round are tracked separately.")
+def open_queued_lead(lead_id):
+    st.session_state.update(workspace="Screening", data_mode=LIVE_MODE, lead=lead_id,
+                            geography=ANYWHERE, company_age="Any age", query="",
+                            funding=[], stages=[], sectors=[], source_filter=[], early_follow_up=False, event_evidence=False,
+                            founder_history_filter="Any background", **{"shortlist-Live discovery": False,
+                            "watch-Live discovery": False, "review_score": 0})
+
+
+page = st.sidebar.selectbox(
+    "Workspace",
+    ["Screening", "New since review", "LinkedIn scouting", "Incubators in Germany",
+     "School projects", "Historical replay"],
+    key="workspace",
+)
+if page == "Historical replay":
+    render_replay()
+    st.stop()
+
+@st.cache_data(ttl=3600, show_spinner="Reading the BVIZ directory…")
+def incubator_centres():
+    return read_centres()
+
+
+@st.cache_data(ttl=3600, show_spinner="Reading public school project results…")
+def school_projects(source):
+    return source_result(SCHOOL_READERS[source])
+
+
+if page == "School projects":
+    st.header("School entrepreneurship projects")
+    st.caption("Public German competition results and later milestones. School projects stay outside investor screening.")
+    chosen = st.multiselect("Programmes", list(SCHOOL_READERS), default=list(SCHOOL_READERS))
+    query = st.text_input("Find a school project", placeholder="e.g. CLIPRO").strip().casefold()
+    count = 0
+    for source in chosen:
+        projects, status = school_projects(source)
+        rows = [row for row in projects if query in f'{row["name"]} {row["project"]}'.casefold()]
+        count += len(rows)
+        st.subheader(source)
+        if status["state"] != "ok":
+            st.warning("Results are temporarily unavailable. Check the public sources below.")
+        for row in rows:
+            st.text(row["name"])
+            st.caption(row["milestone"])
+            if row["project"]:
+                st.text(row["project"])
+    if count == 0:
+        st.info("No projects match your filters.")
+    st.subheader("Published follow-through")
+    for case in PUBLIC_TRANSITIONS:
+        st.text(f'{case["name"]} · {case["milestone"]}')
+    st.divider()
+    st.subheader("Sources")
+    st.link_button("JUGEND GRÜNDET finalists", JUGEND)
+    st.link_button("CLIPRO project detail", CLIPRO)
+    st.link_button("IW JUNIOR national results", JUNIOR)
+    for case in PUBLIC_TRANSITIONS:
+        st.link_button(f'{case["name"]} · documented transition', case["url"])
+    st.stop()
+
+
+if page == "Incubators in Germany":
+    st.header("Incubators in Germany")
+    st.caption("BVIZ member centres · Browse the network and open the original programme sites.")
+    query = st.text_input("Search centre or address", placeholder="e.g. Berlin or Leipzig").strip().casefold()
+    try:
+        centres = incubator_centres()
+    except (OSError, ValueError):
+        st.warning("The directory is temporarily unavailable. Open the original listings below.")
+    else:
+        matches = [row for row in centres if query in f'{row["Centre"]} {row["Address"]}'.casefold()]
+        st.caption(f"{len(matches)} of {len(centres)} centre locations")
+        if matches:
+            st.dataframe(matches, hide_index=True, use_container_width=True,
+                         column_config={"Website": st.column_config.LinkColumn("Official website")})
+        else:
+            st.info("No centre matches this search.")
+    st.link_button("Open BVIZ directory", BVIZ_DIRECTORY)
+    st.link_button("Browse de:hub programmes", PROGRAMME_FINDER)
+    st.link_button("See the federal Startup Factories network", FEDERAL_NETWORK)
+    st.stop()
+
+
+store = ScoutInbox()
+if page == "LinkedIn scouting":
+    render_linkedin(store, EUROPE)
+    st.stop()
+
+notices = store.inbox()
+if page == "New since review":
+    st.header("New since review")
+    latest = store.latest_run()
+    if latest:
+        st.caption(f'Last scan attempt · {latest["generated_at"][:16].replace("T", " ")} UTC')
+        for name, status in latest["source_status"].items():
+            st.caption(f'{name} · {status["state"]} · {status["count"]} records')
+    if not notices:
+        st.info("No unread signals. Run discovery to start tracking shortlisted companies.")
+    current_ids = {row["id"] for row in (store.latest_run(usable_only=True) or {}).get("candidates", [])}
+    for index, notice in enumerate(notices, start=1):
+        st.subheader(notice["name"])
+        st.caption(f'{notice["kind"]} · observed {notice["captured_at"][:10]} UTC')
+        st.text(notice["detail"])
+        if source := valid_url(notice["source"]):
+            st.link_button(f"Read signal {index} source", source)
+        if notice["lead_id"] in current_ids:
+            st.button("Open dossier", key=f'open-{notice["id"]}',
+                      on_click=open_queued_lead, args=(notice["lead_id"],))
+        if st.button("Mark reviewed", key=f'ack-{notice["id"]}'):
+            store.acknowledge(notice["id"])
+            st.rerun()
+    st.stop()
 
 with st.sidebar:
     st.header("Discovery settings")
-    mode = st.radio("Data mode", [LIVE_MODE, SNAPSHOT_MODE])
-    sources = st.multiselect("Public sources", DISCOVERY_SOURCES, default=DISCOVERY_SOURCES,
-                             disabled=mode != LIVE_MODE)
-    days = st.slider("Show HN lookback window (days)", 30, 365, 365, step=5,
-                     disabled=mode != LIVE_MODE)
-    minimum = st.slider("Minimum review score", 0, 100, 0, step=5)
-    run_clicked = st.button("Run sourcing engine", type="primary", use_container_width=True,
-                            disabled=mode == LIVE_MODE and not sources)
-    st.divider()
-    st.caption("Funding and company checks remain part of human diligence.")
+    mode = st.radio("Data mode", [LIVE_MODE, SNAPSHOT_MODE], key="data_mode")
+    is_live = mode == LIVE_MODE
+    sources = st.multiselect("Public sources", DISCOVERY_SOURCES, default=DISCOVERY_SOURCES, disabled=not is_live)
+    days = st.slider("Show HN lookback window (days)", 30, 365, 365, step=5, disabled=not is_live)
+    run_clicked = st.button("Run sourcing engine", type="primary", disabled=is_live and not sources)
+    st.caption(f"{len(notices)} unread items in New since review")
 
+key = "live_view" if is_live else "snapshot_view"
 if run_clicked:
     try:
-        if mode == SNAPSHOT_MODE:
-            outcome = load_demo_run()
-        else:
+        if is_live:
             with st.spinner("Checking public early signals…"):
-                outcome = run_discovery(tuple(sources), days, github_limit=4)
-    except (OSError, ValueError, KeyError):
-        st.error("The run could not be loaded. Check the source configuration and try again.")
-    else:
-        st.session_state["run"] = outcome
+                run = run_discovery(tuple(sources), days, github_limit=4, linkedin_leads=store.linkedin_leads())
+            if run["source_status"]:
+                store.record(run)
+                notices = store.inbox()
+            st.session_state[key] = run
+        else:
+            st.session_state[key] = load_demo_run()
+    except (OSError, ValueError, KeyError, sqlite3.Error):
+        st.error("The run could not be loaded. Check the source and local inbox settings.")
 
-outcome = st.session_state.get("run")
+outcome = st.session_state.get(key)
+if is_live and not run_clicked:
+    latest = store.latest_run()
+    if latest and (not outcome or latest["generated_at"] >= outcome["generated_at"]):
+        outcome = latest
 if outcome is None:
-    st.info("Select discovery sources and run the engine, or load the research snapshot.")
+    st.info("Run the sourcing engine to see live results, or load the research snapshot.")
+    render_sources(None)
+    st.stop()
+
+is_snapshot = outcome["mode"] == "research_snapshot"
+if is_snapshot:
+    st.warning("DEMO RESEARCH MODE · Manually researched reference cases.")
 else:
-    is_snapshot = outcome["mode"] == "research_snapshot"
-    if is_snapshot:
-        st.warning("DEMO RESEARCH MODE · Manually researched reference cases with original source links.")
-    elif mode == SNAPSHOT_MODE:
-        st.caption("Showing the last live result. Run the engine to switch datasets.")
-    st.caption(f'Loaded {outcome["generated_at"]}')
+    st.caption(f'Live scan · {outcome["generated_at"][:16].replace("T", " ")} UTC')
+for name, status in outcome["source_status"].items():
+    if status["state"] in {"error", "partial"}:
+        message = name + " · " + " ".join(status["warnings"])
+        (st.error if status["state"] == "error" else st.warning)(message)
+if outcome["source_status"] and all(v["state"] not in {"ok", "partial"} for v in outcome["source_status"].values()):
+    if prior := store.latest_run(usable_only=True):
+        st.info(f'Showing the last usable results from {prior["generated_at"][:16].replace("T", " ")} UTC.')
+        outcome = prior
 
-    for name, status in outcome["source_status"].items():
-        detail = " ".join(status["warnings"])
-        if status["state"] == "error":
-            st.error(f"{name} · {detail}")
-        elif status["state"] == "partial":
-            st.warning(f"{name} · Partial coverage. {detail}")
+st.subheader("Screening queue")
+a, b, c = st.columns([1, 1, 1.4])
+region = a.selectbox("Geography", REGIONS, index=REGIONS.index(ALL_EUROPE), key="geography")
+age = b.selectbox("Company age", ["Any age", "Up to 3 years", "Up to 2 years"], key="company_age")
+query = c.text_input("Search", placeholder="Company, founder or sector", key="query").casefold().strip()
+with st.expander("Funding, sector and review filters"):
+    include_unknown = st.checkbox("Include companies with unverified age", value=True)
+    shortlist_only = st.toggle("Show shortlisted only", value=not is_snapshot, key=f"shortlist-{mode}")
+    saved_only = st.checkbox("Show watched companies", key=f"watch-{mode}")
+    early_only = st.checkbox("Early follow-up only", key="early_follow_up",
+                             help="Show sourced early projects from the full queue, including those yet to report an MVP or pilot.")
+    limits = st.multiselect("Funding", ["Unknown · verification required", "No public round found in scoped review", "Funding round reported"], key="funding")
+    stage_options = sorted({reported_stage(row) for row in dashboard_rows(outcome)})
+    stages = st.multiselect("Reported funding stage", stage_options, key="stages")
+    source_options = sorted({source for row in outcome.get("candidates", outcome["shortlist"])
+                             for source in (row.get("source_names") or [row.get("source")])
+                             if source})
+    source_filter = st.multiselect("Discovery source", source_options, key="source_filter")
+    events_only = st.checkbox("Innovation event evidence", key="event_evidence",
+                              help="See teams on sourced pitch and competition lists, including outside the shortlist.")
+    founder_filter = st.selectbox(
+        "Founder history", ["Any background", "Previous employer", "Previous startup", REPEAT_FOUNDER],
+        key="founder_history_filter",
+        help="Repeat founder requires a sourced previous venture and a public trace for the current project within 365 days.",
+    )
+    minimum = st.slider("Minimum evaluation score", 0, 100, step=1, key="review_score",
+                        help="Scores use 60 points for the team and 40 for the project. At zero, pending assessments stay visible.")
 
-    shortlist_only = st.toggle("Show shortlisted only", value=not is_snapshot,
-                               key=f'shortlist_{outcome["mode"]}')
-    leads = [row for row in dashboard_rows(outcome, shortlist_only=shortlist_only)
-             if row["score"] >= minimum]
-    if not leads:
-        st.warning("No leads match the current filters. You can widen the score range or include additional candidates.")
+decisions = store.decisions(outcome["mode"])
+rows = dashboard_rows(outcome, shortlist_only=shortlist_only and not (
+    saved_only or early_only or events_only or founder_filter == REPEAT_FOUNDER
+))
+sector_options = sorted({row["sector"] for row in rows})
+sectors = st.multiselect("Sector", sector_options, placeholder="All sectors", key="sectors")
+leads = []
+for item in rows:
+    profile = profile_for(item)
+    country = profile.get("country") or item["location"]
+    if not region_matches(location_region({"country": country}), region):
+        continue
+    evaluation = item["founder_venture_fit"]["score"]
+    if minimum and (evaluation is None or evaluation < minimum):
+        continue
+    if (limits and item["funding_label"] not in limits) or (stages and reported_stage(item) not in stages):
+        continue
+    if sectors and item["sector"] not in sectors:
+        continue
+    if source_filter and not set(source_filter).intersection(item.get("source_names") or [item["origin"]]):
+        continue
+    if events_only:
+        if not PITCH_SOURCES.intersection(item.get("source_names") or [item["origin"]]):
+            continue
+    if founder_filter != "Any background":
+        expected = "Previous startup" if founder_filter == REPEAT_FOUNDER else founder_filter
+        if not any(entry["signal"] == expected for entry in track_record(item)):
+            continue
+        if founder_filter == REPEAT_FOUNDER and not recent_signal(item, profile, date.today()):
+            continue
+    if query and query not in " ".join([item["name"], item["team"], item["sector"]]).casefold():
+        continue
+    if age != "Any age":
+        fit = age_fit(formation_record(item, profile), 3 if age == "Up to 3 years" else 2, date.today())
+        if fit is False or (fit is None and not include_unknown):
+            continue
+    if early_only and not item["early_follow_up"]:
+        continue
+    if saved_only and decisions.get(item["id"], {}).get("decision") != "Watch":
+        continue
+    leads.append(item)
 
-    if leads:
-        a, b, c, d = st.columns(4)
-        a.metric("Leads to review", len(leads))
-        b.metric("Named founding teams", sum(row["founder_identified"] for row in leads))
-        c.metric("German-location leads", sum(row["location"] == "Germany" for row in leads))
-        d.metric("Evidence links", len({url for row in leads for url in row["sources"]}))
-        st.subheader("Evidence-ranked opportunity queue")
-        st.dataframe([
-            {"Score /100": row["score"], "Project": row["name"], "Sector": row["sector"],
-             "Location": row["location"], "Origin": row["origin"], "Team review": row["lead_status"],
-             "Funding": row["funding_label"], "Earliest public signal": row["earliest_public_date"],
-             "Evidence confidence /10": row["evidence_confidence"]}
-            for row in leads
-        ], hide_index=True, use_container_width=True)
+st.metric("Leads to review", len(leads))
+if not leads:
+    st.info("No matching leads. Try All locations, Any age, or turn off the shortlist filter.")
+    render_sources(None)
+    st.stop()
 
-        by_id = {row["id"]: row for row in leads}
-        selection = st.selectbox("Investigate a lead", list(by_id),
-                                 format_func=lambda key: f'{by_id[key]["name"]} · {by_id[key]["score"]}/100')
-        item = by_id[selection]
-        st.divider()
-        st.header(item["name"])
-        st.text(item["description"] or "Description unavailable.", help="Description from the source record")
-        st.write(f'**Investment sector:** {item["sector"]}  |  **Location:** {item["location"]}')
-        location = item["location_evidence"]
-        st.caption(f'Location confidence · {location.get("confidence", "unknown")}')
-        left, right = st.columns([3, 2])
-        with left:
-            st.subheader("Founders and team")
-            for person in item.get("founders", []):
-                role = person.get("role")
-                st.text(f'{person["name"]} · {role}' if role else person["name"])
-                if person.get("source_url"):
-                    st.caption(person["source_url"])
-            if not item.get("founders"):
-                st.text(item["team"] or "Names unavailable from public evidence.")
-
-            st.subheader("Evidence ledger")
-            if item.get("record_provenance"):
-                st.caption(item["record_provenance"])
-            for entry in item.get("evidence", []):
-                st.text(f'{entry["signal"]} · {entry["excerpt"]}')
-                st.caption(entry["source_url"])
-            for entry in item.get("claims", []):
-                st.text(f'{entry["status"].title()} · {entry["type"]} · {entry["text"]}')
-                st.caption(entry["source_url"])
-
-            st.subheader("Evidence timeline")
-            st.caption(item["public_trace_age"])
-            st.caption("Company age is unverified. The timeline measures public evidence.")
-            for event in item.get("timeline", []):
-                qualifier = " · public visibility unverified" if event.get("public_signal") is False else ""
-                st.text(f'{event["date"]} · {event["label"]}{qualifier}')
-                st.caption(event["url"])
-            if not item.get("timeline"):
-                st.caption("No dated public trace is available.")
-
-            st.subheader("Original sources")
-            for url in dict.fromkeys([item.get("project_url"), *item["sources"]]):
-                if url and urlsplit(url).scheme in {"http", "https"}:
-                    st.link_button(url, url)
-
-        with right:
-            st.subheader("Why it was ranked here")
-            st.json(item["score_components"], expanded=True)
-            st.caption(f'Evidence confidence · {item["evidence_confidence"]}/10')
-            st.subheader("Funding review")
-            st.write(item["funding_label"])
-            st.caption("A scoped search can miss private or undisclosed financing.")
-            for check in item["funding"]["reviews"]:
-                if check.get("checked_on"):
-                    st.caption(f'Checked {check["checked_on"]} · {check.get("scope", "")}')
-                for url in check.get("sources", []):
-                    st.caption(url)
-                if check.get("source_url"):
-                    st.caption(check["source_url"])
-            for report in item["funding"]["rounds"] + item["funding"]["public_support"]:
-                st.caption(report["source_url"])
-
-            st.subheader("Early-stage signals")
-            signals = item.get("commercialization_signals") or []
-            for signal in signals:
-                st.text(f'{signal["status"].title()} · {signal["type"].replace("_", " ")}')
-                st.caption(signal["source_url"])
-            if not signals:
-                st.caption("No commercialization signals documented in this run.")
-
-            st.subheader("Diligence warnings")
-            for flag in item.get("red_flags", []):
-                st.text(flag["reason"])
-                st.caption(flag["source_url"])
-            for warning in item.get("shortlist_exclusions", []):
-                st.text(warning.replace("_", " ").capitalize())
-            for gap in item.get("missing_information", []):
-                st.text(f"Verify · {gap}")
-            st.caption("Database lead-time comparison · unmeasured")
-        st.divider()
-        st.subheader("Download the evidence trail")
+queue, detail = st.columns([2, 4], gap="large")
+with queue:
+    by_id = {row["id"]: row for row in leads}
+    if st.session_state.get("lead") not in by_id:
+        st.session_state["lead"] = next(iter(by_id))
+    selection = st.selectbox("Investigate a lead", list(by_id), key="lead",
+                             format_func=lambda lead_id: by_id[lead_id]["name"])
+    for row in leads[:10]:
+        with st.container(border=True):
+            st.text(row["name"])
+            label = decisions.get(row["id"], {}).get("decision") or row["lead_status"]
+            grade = row["founder_venture_fit"]["score"]
+            score_label = f"{grade}/100" if grade is not None else "Assessment pending"
+            st.caption(f'{score_label} · {label} · {row["earliest_public_date"] or "Trace date unknown"}')
+            st.caption(row["funding_label"])
+    with st.expander("Export screening queue"):
         st.download_button("Export lead dossiers (JSON)", data=export_json(outcome, leads),
                            file_name="first_trace_leads.json", mime="application/json")
         st.download_button("Export screening queue (CSV)", data=export_csv(leads),
                            file_name="first_trace_queue.csv", mime="text/csv")
-
-with st.expander("Scouting methodology · limitations · HTGF fit"):
-    st.markdown("""
-**Goal** — Surface German and European venture teams before their first public funding round.
-
-**Sources** — TUM Venture Labs, TU Berlin's venture directory, Show HN and bounded GitHub search.
-Evidence can include named teams, old public traces, applied research, public grant support and
-commercialization cues. Source URLs and verification states accompany the signals.
-
-**Scoring** — Founder Emergence combines team, technical, commercial, market, timing and evidence
-signals. Eligibility is evaluated separately. Confirm company fit, IP ownership, customer demand
-and funding with human diligence before outreach.
-""")
+with detail:
+    selected = by_id[selection]
+    evidence = render_dossier(selected, store, decisions.get(selection), notices)
+render_sources(selected, evidence)
